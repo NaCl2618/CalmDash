@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalmDash - Always visible, never intrusive</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        ink: {
+                            black: '#000000',
+                            dark: '#1a1a1a',
+                            gray: '#888888',
+                            light: '#e5e5e5',
+                            white: '#ffffff',
+                            paper: '#f5f5f5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght[100..900]&display=swap"
+        rel="stylesheet">
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="min-h-screen flex flex-col font-sans bg-paper text-ink-black">
+
+    <!-- Header -->
+    <header class="bg-white border-b-4 border-black p-4 sticky top-0 z-50 flex justify-between items-center shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+            <h1 class="text-2xl font-black tracking-tight text-black">CalmDash</h1>
+            <div class="flex items-center gap-2 text-[10px] sm:text-xs md:text-sm font-bold text-gray-600">
+                <div id="live-date">YYYY년 MM월 DD일</div>
+                <span class="opacity-30">|</span>
+                <div id="live-clock">00:00</div>
+                <span class="opacity-30">|</span>
+                <div id="live-weather" class="flex items-center gap-2">
+                    <!-- Weather injected by JS -->
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="theme-toggle"
+                class="p-2 border-2 border-black hover:bg-black hover:text-white transition-colors" title="흑백 테마 전환">
+                <i id="theme-icon" class="ph ph-sun"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-dashboard" class="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full">
+        <!-- Dashboard Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Routine Column -->
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-between items-end border-b-2 border-black pb-2 mb-2">
+                    <h3 class="text-xl font-black uppercase flex items-center gap-2">
+                        <i class="ph ph-arrows-clockwise"></i> 오늘의 루틴
+                    </h3>
+                    <span id="routine-progress" class="font-mono text-sm font-bold bg-black text-white px-2">0/0</span>
+                </div>
+                <div id="routine-list" class="flex flex-col gap-3">
+                    <!-- Dynamic Content -->
+                </div>
+                <div class="mt-auto pt-4">
+                    <button class="w-full e-btn border-dashed text-gray-600 hover:text-black hover:border-solid"
+                        data-action="add-routine">
+                        + 새 루틴 추가
+                    </button>
+                </div>
+            </div>
+
+            <!-- Todo Column (swapped) -->
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-between items-end border-b-2 border-black pb-2 mb-2">
+                    <h3 class="text-xl font-black uppercase flex items-center gap-2">
+                        <i class="ph ph-check-square"></i> 할 일
+                    </h3>
+                    <div class="flex gap-1">
+                        <button class="text-xs font-bold hover:underline cursor-pointer"
+                            data-action="sort-priority">우선순위순</button>
+                        <span class="text-xs">|</span>
+                        <button class="text-xs font-bold hover:underline cursor-pointer"
+                            data-action="sort-date">마감일순</button>
+                    </div>
+                </div>
+                <div id="todo-list" class="flex flex-col gap-3 h-full">
+                    <!-- Dynamic Content -->
+                </div>
+                <div class="mt-auto pt-4">
+                    <button class="w-full e-btn border-dashed text-gray-600 hover:text-black hover:border-solid"
+                        data-action="add-todo">
+                        + 새 할 일 추가
+                    </button>
+                </div>
+            </div>
+
+            <!-- Schedule Column (swapped) -->
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-between items-end border-b-2 border-black pb-2 mb-2">
+                    <h3 class="text-xl font-black uppercase flex items-center gap-2">
+                        <i class="ph ph-calendar"></i> 예정된 일정
+                    </h3>
+                    <span class="text-xs font-bold border border-black px-1 rounded">오늘 & 내일</span>
+                </div>
+                <div id="schedule-list" class="flex flex-col gap-3">
+                    <!-- Dynamic Content -->
+                </div>
+                <div class="mt-auto pt-4">
+                    <button class="w-full e-btn border-dashed text-gray-600 hover:text-black hover:border-solid"
+                        data-action="add-schedule">
+                        + 새 이벤트 추가
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Container -->
+    <div id="modal-overlay"
+        class="hidden fixed inset-0 flex items-center justify-center z-50 bg-black/70 transition-opacity duration-300">
+        <!-- Inject Modal Content Here -->
+    </div>
+
+
+    <!-- Footer -->
+    <footer class="p-4 bg-white border-t-2 border-black text-center text-xs text-gray-500">
+        <p>본 서비스는 <span class="font-bold underline cursor-pointer" id="storage-info-trigger">브라우저 스토리지</span>에 데이터를
+            저장합니다.</p>
+        <p class="mt-1">캐시 삭제 시 저장된 데이터가 소실될 수 있습니다.</p>
+    </footer>
+
+    <!-- Modules -->
+    <script src="js/bundle.js"></script>
+</body>
+
+</html>
