@@ -1,14 +1,19 @@
 /**
- * 생산성 허브 - 단일 번들 스크립트
- * Store, Render, App 로직을 통합하여 ES 모듈의 CORS 오류 없이
- * file:// 프로토콜에서 실행되도록 지원합니다.
+ * CalmDash 생산성 허브 - 메인 프로그램 스크립트
+ * 
+ * 이 프로그램은 루틴, 일정, 할 일 목록을 관리하며 모든 데이터를 사용자의 브라우저에 안전하게 저장합니다.
+ * 주요 기능: 데이터 저장 및 불러오기, 화면 그리기, 내보내기/가져오기 등
+ * 
+ * [최근 업데이트 - 2026-01-03]
+ * - 할 일 정렬 기능 (우선순위/마감일순) 추가 및 선택적 입력 지원
+ * - 모든 섹션의 카드 디자인 통일 및 화면 공간 최적화 (Compact Mode)
+ * - JSON 파일 내보내기/가져오기 기능 추가로 데이터 백업 가능
  */
 
-// --- 상수 및 데이터 ---
-
-
-// 앱 초기 실행 시 사용할 기본 데이터
+// --- 1. 기본 설정 데이터 ---
+// 앱을 처음 실행했을 때 사용자에게 보여줄 예시 데이터들입니다.
 const INITIAL_DATA = {
+    // 매일 또는 특정 요일에 반복되는 습관들
     routines: [
         { id: 'r1', title: '아침 약 복용', time: '07:30', isCompleted: false, repeat: '매일' },
         { id: 'r2', title: '학교 가방 싸기', time: '08:00', isCompleted: true, repeat: '매일' },
@@ -16,12 +21,14 @@ const INITIAL_DATA = {
         { id: 'r4', title: '일일 보고서 제출', time: '17:00', isCompleted: false, repeat: '매일' },
         { id: 'r5', title: '분리수거', time: '19:00', isCompleted: false, repeat: '수요일' }
     ],
+    // 정해진 날짜와 시간에 수행하는 약속이나 계획들
     schedules: [
         { id: 's1', title: '치과 예약', start: '10:00', end: '11:00', isAllDay: false, dateOffset: 0 },
         { id: 's2', title: '팀 회의', start: '14:00', end: '15:00', isAllDay: false, dateOffset: 0 },
         { id: 's3', title: '외식', start: '18:30', end: '20:00', isAllDay: false, dateOffset: 1 },
         { id: 's4', title: '장보기', start: '00:00', end: '23:59', isAllDay: true, dateOffset: 0 }
     ],
+    // 기한 내에 완료해야 하는 개별 작업들
     todos: [
         { id: 't1', title: '전기 요금 납부', dueDate: new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0], priority: 'high', isCompleted: false },
         { id: 't2', title: '생일 선물 구매', dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0], priority: 'medium', isCompleted: false },
@@ -30,12 +37,12 @@ const INITIAL_DATA = {
     ]
 };
 
-// --- 도우미 함수 ---
+// --- 2. 도우미 도구들 ---
 
 /**
  * @function generateUUID
- * @description 항목 식별을 위한 고유 ID(UUID)를 생성합니다. Crypto API가 없는 환경에서도 작동하도록 구현되었습니다.
- * @returns {string} 생성된 UUID 문자열
+ * @description 각 항목(루틴, 할 일 등)을 구별하기 위한 고유한 '이름표(ID)'를 만듭니다.
+ * @returns {string} 새로 만들어진 겹치지 않는 고유한 이름표 문자열
  */
 function generateUUID() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -47,23 +54,23 @@ function generateUUID() {
     });
 }
 
-// --- Store 클래스: 데이터 관리 및 영구 저장 ---
+// --- 3. 데이터 창고 (Store): 정보를 저장하고 불러오는 역할을 합니다. ---
 
 class Store {
     /**
      * @constructor
-     * @description Store 클래스의 인스턴스를 초기화합니다. 저장 키 설정, 구독자 목록 초기화 및 데이터를 로드합니다.
+     * @description 데이터 창고를 준비합니다. 저장할 위치를 정하고 이전 데이터를 가져옵니다.
      */
     constructor() {
         this.STORAGE_KEY = 'productivity_hub_data_v1';
-        this.listeners = []; // 데이터 변경 시 호출될 구독자 목록
-        this.data = this.load(); // LocalStorage에서 데이터 로드
+        this.listeners = []; // 정보가 바뀌면 화면에 알려주기 위해 등록된 명단
+        this.data = this.load(); // 창고에서 정보 꺼내오기
     }
 
     /**
      * @method load
-     * @description LocalStorage에서 데이터를 읽어와 파싱합니다. 데이터가 없으면 초기 데이터를 반환하고 첫 방문 플래그를 설정합니다.
-     * @returns {Object} 로드된 데이터 객체
+     * @description 금고(저장소)에서 예전에 저장했던 정보를 읽어옵니다. 정보가 하나도 없다면 샘플 데이터를 보여줍니다.
+     * @returns {Object} 불러온 전체 정보 꾸러미
      */
     load() {
         try {
@@ -75,14 +82,14 @@ class Store {
             console.warn('LocalStorage access denied or failed:', e);
         }
 
-        // 최초 접속 시 시료 데이터와 안내를 위해 표시 설정 (동적 추가 방지 위해 INITIAL_DATA 복사본 사용)
+        // 처음 방문했다면 예시 데이터를 준비합니다.
         this.isFirstTime = true;
         return JSON.parse(JSON.stringify(INITIAL_DATA));
     }
 
     /**
      * @method save
-     * @description 현재 데이터를 LocalStorage에 저장을 시도하고, 등록된 모든 구독자에게 변경 사항을 알립니다.
+     * @description 현재 정보를 금고(저장소)에 안전하게 넣고, 화면에 "새로운 정보로 다시 그려라!"라고 신호를 줍니다.
      */
     save() {
         try {
@@ -95,8 +102,8 @@ class Store {
 
     /**
      * @method subscribe
-     * @description 데이터 변경 시 호출될 콜백(구독자)을 등록합니다. 등록 즉시 현재 데이터를 전달합니다.
-     * @param {Function} listener 데이터 변경 시 실행될 함수
+     * @description 정보가 바뀔 때마다 실행할 '화면 그리기 약속'을 등록합니다.
+     * @param {Function} listener 정보가 바뀔 때마다 실행될 동작
      */
     subscribe(listener) {
         this.listeners.push(listener);
@@ -105,7 +112,7 @@ class Store {
 
     /**
      * @method notify
-     * @description 등록된 모든 구독자에게 현재 데이터 상태를 전달하여 화면 갱신 등을 수행하게 합니다.
+     * @description 정보를 기다리고 있는 모든 곳(약속된 리스트)에 새로운 정보를 전달합니다.
      */
     notify() {
         this.listeners.forEach(l => l(this.data));
@@ -114,8 +121,8 @@ class Store {
 
     /**
      * @method addRoutine
-     * @description 새로운 루틴 항목을 추가하고 저장합니다.
-     * @param {Object} routine 추가할 루틴 정보 (title, time, repeat 등)
+     * @description 새로운 루틴(반복 습관)을 목록에 추가합니다.
+     * @param {Object} routine 추가하고 싶은 새로운 루틴 정보
      */
     addRoutine(routine) {
         this.data.routines.push({ ...routine, id: generateUUID(), isCompleted: false });
@@ -124,8 +131,8 @@ class Store {
 
     /**
      * @method toggleRoutine
-     * @description 특정 루틴의 완료 상태를 반전(true/false) 시킵니다.
-     * @param {string} id 토글할 루틴의 ID
+     * @description 루틴을 완료했는지 안 했는지 체크 표시 상태를 바꿉니다.
+     * @param {string} id 바꿀 루틴의 이름표(ID)
      */
     toggleRoutine(id) {
         const item = this.data.routines.find(r => r.id === id);
@@ -137,8 +144,8 @@ class Store {
 
     /**
      * @method addSchedule
-     * @description 새로운 일정 항목을 추가하고 저장합니다.
-     * @param {Object} schedule 추가할 일정 정보 (title, date, start, end 등)
+     * @description 새로운 일정(약속)을 하나 추가합니다.
+     * @param {Object} schedule 새로운 일정 정보
      */
     addSchedule(schedule) {
         this.data.schedules.push({ ...schedule, id: generateUUID() });
@@ -147,17 +154,18 @@ class Store {
 
     /**
      * @method addTodo
-     * @description 새로운 할 일 항목을 추가하고 저장합니다.
-     * @param {Object} todo 추가할 할 일 정보 (title, dueDate, priority 등)
+     * @description 새로운 할 일을 하나 추가합니다.
+     * @param {Object} todo 새로운 할 일 정보
      */
     addTodo(todo) {
         this.data.todos.push({ ...todo, id: generateUUID(), isCompleted: false });
         this.save();
     }
+
     /**
      * @method toggleTodo
-     * @description 특정 할 일의 완료 상태를 반전시킵니다.
-     * @param {string} id 토글할 할 일의 ID
+     * @description 할 일을 끝냈는지 표시를 바꿉니다.
+     * @param {string} id 바꿀 할 일의 이름표(ID)
      */
     toggleTodo(id) {
         const item = this.data.todos.find(t => t.id === id);
@@ -169,10 +177,10 @@ class Store {
 
     /**
      * @method updateItem
-     * @description 기존 항목의 정보를 수정합니다.
-     * @param {string} type 항목 유형 ('routine', 'schedule', 'todo')
-     * @param {string} id 수정할 항목의 ID
-     * @param {Object} newData 업데이트할 데이터 객체
+     * @description 이미 적은 정보의 내용을 고칩니다 (예: 제목 오타 수정).
+     * @param {string} type 루틴, 일정, 할 일 중 어떤 것인지
+     * @param {string} id 고칠 항목의 이름표
+     * @param {Object} newData 바꿀 새로운 내용들
      */
     updateItem(type, id, newData) {
         let collection;
@@ -189,9 +197,9 @@ class Store {
 
     /**
      * @method deleteItem
-     * @description 특정 항목을 목록에서 제거합니다.
-     * @param {string} type 항목 유형 ('routine', 'schedule', 'todo')
-     * @param {string} id 삭제할 항목의 ID
+     * @description 항목을 영구적으로 목록에서 지웁니다.
+     * @param {string} type 어떤 항목인지
+     * @param {string} id 지울 항목의 이름표
      */
     deleteItem(type, id) {
         console.log(`[Store] Attempting to delete ${type} with id: ${id}`);
@@ -204,18 +212,65 @@ class Store {
                 this.data.todos = this.data.todos.filter(t => t.id !== id);
             }
             this.save();
-            console.log(`[Store] Successfully deleted ${type} ${id}`);
         } catch (error) {
             console.error(`[Store] Error deleting ${type}:`, error);
         }
+    }
+
+    /**
+     * @method exportJSON
+     * @description 현재 저장된 모든 정보를 파일로 만들어서 컴퓨터로 꺼내옵니다 (백업용).
+     */
+    exportJSON() {
+        try {
+            const dataStr = JSON.stringify(this.data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            link.href = url;
+            link.download = `calmdash-data-${timestamp}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('Export failed:', e);
+            alert('데이터 내보내기에 실패했습니다.');
+        }
+    }
+
+    /**
+     * @method importJSON
+     * @description 백업해두었던 파일에서 정보를 읽어와 앱에 다시 넣습니다.
+     * @param {File} file 읽어올 JSON 파일
+     */
+    importJSON(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                // 가져온 정보가 진짜인지, 내용물은 다 있는지 확인합니다.
+                if (importedData.routines && importedData.schedules && importedData.todos) {
+                    this.data = importedData;
+                    this.save();
+                    alert('데이터를 성공적으로 가져왔습니다.');
+                } else {
+                    throw new Error('Invalid data structure');
+                }
+            } catch (err) {
+                console.error('Import failed:', err);
+                alert('잘못된 JSON 파일 형식이거나 데이터가 손상되었습니다.');
+            }
+        };
+        reader.readAsText(file);
     }
 }
 
 /**
  * @function showConfirmModal
- * @description 사용자에게 "확인/취소"를 묻는 커스텀 모달 윈도우를 표시합니다.
- * @param {string} message 표시할 확인 메시지
- * @param {Function} onConfirm "확인" 버튼 클릭 시 실행할 콜백 함수
+ * @description 정말 실행할 것인지 한 번 더 물어보는 확인창을 화면에 띄웁니다.
+ * @param {string} message 물어볼 말씀
+ * @param {Function} onConfirm OK를 눌렀을 때 실행할 동작
  */
 function showConfirmModal(message, onConfirm) {
     const overlay = document.getElementById('modal-overlay');
@@ -245,15 +300,15 @@ function showConfirmModal(message, onConfirm) {
     };
 }
 
-// --- 렌더링 함수: 데이터를 HTML 요소로 변환하여 화면에 출력 ---
+// --- 4. 화면 그리기 (Render): 데이터를 화면에 예쁘게 보여주는 역할입니다. ---
 
 /**
  * @function renderRoutines
- * @description 루틴 목록 데이터를 받아 HTML로 변환하여 화면에 출력합니다. 요일 필터링 및 시간 정렬 로직이 포함되어 있습니다.
- * @param {Array} routines 전체 루틴 데이터 배열
- * @param {string} containerId 결과 HTML을 삽입할 부모 요소의 ID
- * @param {Object} events 클릭 이벤트 처리용 콜백 객체 (onToggle, onDelete, onEdit)
- * @param {boolean} showAll 필터링 없이 전체 루틴을 표시할지 여부
+ * @description 루틴 목록을 받아서 화면에 목록을 하나하나 그려줍니다.
+ * @param {Array} routines 보여줄 루틴 데이터 리스트
+ * @param {string} containerId 리스트를 보여줄 화면 구역의 ID
+ * @param {Object} events 정보 수정, 삭제 등을 처리하는 동작 약속
+ * @param {boolean} showAll 모든 루틴을 다 보여줄지 여부
  */
 function renderRoutines(routines, containerId, events, showAll = false) {
     const container = document.getElementById(containerId);
@@ -304,24 +359,28 @@ function renderRoutines(routines, containerId, events, showAll = false) {
         const nowHourMin = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
         const isLate = !isCompleted && r.time < nowHourMin; // 마감 시간이 지났는지 확인
         const card = document.createElement('div');
-        card.className = `e-card flex items-center justify-between p-3 ${isCompleted ? 'opacity-50 bg-gray-100 border-gray-400' : 'bg-white'} ${isLate ? 'border-l-8 border-l-black' : ''}`;
+        card.className = `e-card p-2 px-3 flex flex-col gap-1 relative transition-all ${isCompleted ? 'opacity-60 grayscale bg-gray-50' : 'bg-white'} ${isLate ? 'border-l-8 border-l-black' : ''} hover:shadow-hard-sm`;
 
         card.innerHTML = `
-            <div class="flex items-center gap-3">
-                <button data-id="${r.id}" class="toggle-routine-btn w-8 h-8 border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors flex-shrink-0">
-                    ${isCompleted ? '<i class="ph-bold ph-check"></i>' : ''}
-                </button>
-                <div>
-                    <div class="font-bold ${isCompleted ? 'line-through' : ''}">${r.title}</div>
-                    <div class="text-xs text-gray-500 font-mono flex items-center gap-1">
-                        <span class="font-bold text-black">${r.time}</span> • <span>${r.repeat}</span>
-                        ${isLate ? '<span class="bg-black text-white px-1 font-bold">긴급</span>' : ''}
-                    </div>
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="e-badge bg-black text-white px-1.5 py-0 text-[9px]">${r.repeat}</span>
+                    <span class="text-[11px] font-mono font-bold"><i class="ph ph-clock inline mr-1"></i>${r.time}</span>
+                </div>
+                <div class="flex gap-1">
+                    <button data-id="${r.id}" class="edit-routine-btn p-1 text-gray-400 hover:text-black transition-colors" title="수정"><i class="ph ph-pencil-simple"></i></button>
+                    <button data-id="${r.id}" class="delete-routine-btn p-1 text-gray-400 hover:text-red-500 transition-colors" title="삭제"><i class="ph ph-trash"></i></button>
                 </div>
             </div>
-            <div class="flex gap-1 flex-shrink-0">
-                <button data-id="${r.id}" class="edit-routine-btn p-1 text-gray-400 hover:text-black" title="수정"><i class="ph ph-pencil-simple"></i></button>
-                <button data-id="${r.id}" class="delete-routine-btn p-1 text-gray-400 hover:text-red-500" title="삭제"><i class="ph ph-trash"></i></button>
+            
+            <div class="flex justify-between items-center gap-2">
+                <div class="font-bold text-sm leading-tight truncate ${isCompleted ? 'line-through text-gray-500' : ''}">
+                    ${r.title}
+                    ${isLate ? '<span class="ml-1 bg-black text-white text-[9px] px-1 py-0.5">긴급</span>' : ''}
+                </div>
+                <button data-id="${r.id}" class="toggle-routine-btn e-btn ${isCompleted ? 'bg-gray-100' : 'primary'} text-[10px] py-1 px-2 flex-shrink-0 shadow-none border">
+                    ${isCompleted ? '<i class="ph ph-check"></i>' : '완료'}
+                </button>
             </div>
         `;
         const routineId = r.id;
@@ -349,11 +408,11 @@ function renderRoutines(routines, containerId, events, showAll = false) {
 
 /**
  * @function renderSchedules
- * @description 일정 목록 데이터를 받아 HTML로 변환하여 화면에 출력합니다. 날짜순/시간순 정렬 및 오늘/내일 필터링 로직이 포함되어 있습니다.
- * @param {Array} schedules 전체 일정 데이터 배열
- * @param {string} containerId 결과 HTML을 삽입할 부모 요소의 ID
- * @param {Object} events 클릭 이벤트 처리용 콜백 객체 (onDelete, onEdit)
- * @param {boolean} showAll 필터링 없이 전체 일정을 표시할지 여부
+ * @description 오늘과 내일의 중요 일정들을 화면에 차례대로 보여줍니다.
+ * @param {Array} schedules 전체 일정 데이터 리스트
+ * @param {string} containerId 화면 구역 ID
+ * @param {Object} events 수정, 삭제 등의 동작 약속
+ * @param {boolean} showAll 날짜 상관없이 전체를 다 보여줄지 여부
  */
 function renderSchedules(schedules, containerId, events, showAll = false) {
     const container = document.getElementById(containerId);
@@ -409,17 +468,24 @@ function renderSchedules(schedules, containerId, events, showAll = false) {
         }
 
         const card = document.createElement('div');
-        card.className = "e-card flex items-center p-3 bg-white relative group";
+        card.className = "e-card p-2 px-3 flex flex-col gap-1 bg-white relative hover:shadow-hard-sm transition-all";
         card.innerHTML = `
-            <div class="flex-grow">
-                <div class="font-bold text-sm">${s.title}</div>
-                <div class="text-xs font-mono text-gray-600">
-                    ${s.isAllDay ? '종일 이벤트' : `${s.start} - ${s.end}`}
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="e-badge border border-black px-1 py-0 text-[8px] uppercase font-black">SCH</span>
+                    <span class="text-[11px] font-mono text-gray-600 font-bold"><i class="ph ph-calendar inline mr-1"></i>${s.date}</span>
+                </div>
+                <div class="flex gap-1">
+                    <button data-id="${s.id}" class="edit-schedule-btn p-1 text-gray-400 hover:text-black transition-colors" title="수정"><i class="ph ph-pencil-simple"></i></button>
+                    <button data-id="${s.id}" class="delete-schedule-btn p-1 text-gray-400 hover:text-red-500 transition-colors" title="삭제"><i class="ph ph-trash"></i></button>
                 </div>
             </div>
-            <div class="flex gap-1 flex-shrink-0 absolute right-0 top-1 z-10 transition-opacity">
-                <button data-id="${s.id}" class="edit-schedule-btn p-1 text-gray-400 hover:text-black" title="수정"><i class="ph ph-pencil-simple"></i></button>
-                <button data-id="${s.id}" class="delete-schedule-btn p-1 text-gray-400 hover:text-red-500" title="삭제"><i class="ph ph-trash"></i></button>
+            
+            <div class="flex justify-between items-end gap-2">
+                <div class="font-bold text-base leading-tight truncate">${s.title}</div>
+                <div class="text-[10px] font-bold font-mono bg-gray-100 px-1.5 py-0.5 border border-black flex-shrink-0">
+                    ${s.isAllDay ? '종일' : `${s.start}-${s.end}`}
+                </div>
             </div>
         `;
         const scheduleId = s.id;
@@ -440,20 +506,35 @@ function renderSchedules(schedules, containerId, events, showAll = false) {
 
 /**
  * @function renderTodos
- * @description 할 일 목록 데이터를 받아 HTML로 변환하여 화면에 출력합니다. 미완료 항목만 우선순위 순으로 정렬하여 표시합니다.
- * @param {Array} todos 할 일 데이터 배열
- * @param {string} containerId 결과 HTML을 삽입할 부모 요소의 ID
- * @param {Object} events 클릭 이벤트 처리용 콜백 객체 (onToggle, onDelete, onEdit)
+ * @description 할 일 목록을 중요도나 마감일 순서에 맞춰서 보여줍니다.
+ * @param {Array} todos 할 일 데이터 리스트
+ * @param {string} containerId 화면 구역 ID
+ * @param {Object} events 완료 처리, 수정, 삭제 등의 동작 약속
+ * @param {string} sortType 어떤 순서로 정렬할지 ('priority': 중요도순, 'date': 마감일순)
  */
-function renderTodos(todos, containerId, events) {
+function renderTodos(todos, containerId, events, sortType = 'priority') {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = '';
-    // 완료되지 않은 항목만 표시 및 우선순위 정렬
+
+    // 완료되지 않은 항목만 표시
     const activeTodos = todos.filter(t => !t.isCompleted);
+
+    // 정렬 로직
     activeTodos.sort((a, b) => {
-        const pMap = { high: 1, medium: 2, low: 3 };
-        return pMap[a.priority] - pMap[b.priority];
+        if (sortType === 'priority') {
+            const pMap = { high: 1, medium: 2, low: 3, none: 4 };
+            const pA = a.priority || 'none';
+            const pB = b.priority || 'none';
+            return pMap[pA] - pMap[pB];
+        } else if (sortType === 'date') {
+            // 날짜가 없는 경우 가장 뒤로 보냄
+            if (!a.dueDate && !b.dueDate) return 0;
+            if (!a.dueDate) return 1;
+            if (!b.dueDate) return -1;
+            return a.dueDate.localeCompare(b.dueDate);
+        }
+        return 0;
     });
     if (activeTodos.length === 0) {
         container.innerHTML = `
@@ -466,27 +547,37 @@ function renderTodos(todos, containerId, events) {
     }
     activeTodos.forEach(t => {
         let priorityText, priorityColor;
-        if (t.priority === 'high') { priorityText = '최고'; priorityColor = 'bg-black text-white'; }
-        else if (t.priority === 'medium') { priorityText = '중간'; priorityColor = 'bg-gray-400 text-white'; }
-        else { priorityText = '낮음'; priorityColor = 'bg-white text-black border border-gray-400'; }
+        const p = t.priority || 'none';
+
+        if (p === 'high') { priorityText = '최고'; priorityColor = 'bg-black text-white'; }
+        else if (p === 'medium') { priorityText = '중간'; priorityColor = 'bg-gray-400 text-white'; }
+        else if (p === 'low') { priorityText = '낮음'; priorityColor = 'bg-white text-black border border-gray-400'; }
+        else { priorityText = '미지정'; priorityColor = 'bg-gray-100 text-gray-500 border border-gray-200'; }
 
         const card = document.createElement('div');
-        card.className = `e-card p-3 flex flex-col gap-2 relative group border-l-8 ${t.priority === 'high' ? 'border-l-black' : t.priority === 'medium' ? 'border-l-gray-400' : 'border-l-gray-200'}`;
+        const borderColor = p === 'high' ? 'border-l-black' : p === 'medium' ? 'border-l-gray-400' : p === 'low' ? 'border-l-gray-200' : 'border-l-transparent';
+        card.className = `e-card p-2 px-3 flex flex-col gap-1 relative bg-white border-l-8 ${borderColor} hover:shadow-hard-sm transition-all`;
+
         card.innerHTML = `
-            <div class="flex justify-between items-start">
+            <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-sm ${priorityColor}">${priorityText}</span>
-                    <span class="text-xs font-mono text-gray-500"><i class="ph ph-calendar-check inline mr-1"></i>${t.dueDate}</span>
+                    <span class="text-[9px] font-black uppercase px-2 py-0 border-2 border-black ${priorityColor}">${priorityText}</span>
+                    <span class="text-[11px] font-mono font-bold text-gray-600">
+                        <i class="ph ph-calendar-check inline mr-1"></i>
+                        ${t.dueDate || '기한 없음'}
+                    </span>
                 </div>
-                <div class="text-xl flex items-center gap-1">
-                    <button data-id="${t.id}" class="edit-todo-btn p-1 text-gray-400 hover:text-black" title="수정"><i class="ph ph-pencil-simple"></i></button>
-                    <span class="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"><i class="ph ph-user"></i></span>
+                <div class="flex gap-1">
+                    <button data-id="${t.id}" class="edit-todo-btn p-1 text-gray-400 hover:text-black transition-colors" title="수정"><i class="ph ph-pencil-simple"></i></button>
+                    <button data-id="${t.id}" class="delete-todo-btn p-1 text-gray-400 hover:text-red-500 transition-colors" title="삭제"><i class="ph ph-trash"></i></button>
                 </div>
             </div>
-            <div class="font-bold text-md leading-tight">${t.title}</div>
-            <div class="flex gap-2 justify-end mt-2">
-                <button data-id="${t.id}" class="complete-todo-btn e-btn text-xs font-bold py-1 px-2 hover:bg-black hover:text-white transition-colors">완료 처리</button>
-                <button data-id="${t.id}" class="delete-todo-btn p-1 text-gray-400 hover:text-red-500" title="삭제"><i class="ph ph-trash"></i></button>
+            
+            <div class="flex justify-between items-center gap-2">
+                <div class="font-bold text-sm leading-tight truncate">${t.title}</div>
+                <button data-id="${t.id}" class="complete-todo-btn e-btn primary text-[10px] py-1 px-2 flex-shrink-0 shadow-none border">
+                    완료
+                </button>
             </div>
         `;
         const todoId = t.id;
@@ -509,21 +600,22 @@ function renderTodos(todos, containerId, events) {
     });
 }
 
-// --- 애플리케이션 메인 로직 ---
+// --- 5. 프로그램 실행 준비 (App Start): 앱을 켜고 초기화하는 곳입니다. ---
 
 const app = new Store();
 
 /**
  * @function init
- * @description 애플리케이션의 앱 진입점으로, 시계/날씨/이벤트를 초기화하고 데이터 변경 시 화면 갱신을 위한 구독을 설정합니다.
+ * @description 앱이 켜지자마자 실행되는 함수입니다. 시계와 날씨를 켜고, 버튼에 기능을 부여합니다.
  */
 function init() {
-    initClock(); // 시계 시작
-    initWeather(); // 실시간 날씨 초기화
-    setupEventListeners(); // 전역 이벤트 리스너 설정
-    // 필터 상태 유지 (LocalStorage)
+    initClock(); // 시계 돌리기 시작
+    initWeather(); // 지금 날씨 가져오기
+    setupEventListeners(); // 각 버튼에 "눌렀을 때 뭐 해라"라고 말해주기
+    // 필터 및 정렬 상태 유지 (LocalStorage)
     let showAllRoutines = localStorage.getItem('calm_dash_show_all_routines') === 'true';
     let showAllSchedules = localStorage.getItem('calm_dash_show_all_schedules') === 'true';
+    let todoSortType = localStorage.getItem('calm_dash_todo_sort') || 'priority';
 
     // 데이터 구독: 데이터 변경 시마다 화면 다시 그리기
     app.subscribe((data) => {
@@ -540,20 +632,39 @@ function init() {
             onToggle: (id) => app.toggleTodo(id),
             onDelete: (id) => app.deleteItem('todo', id),
             onEdit: (item) => showAddModal('todo', item)
-        });
+        }, todoSortType);
     });
 
-    // 필터 토글 이벤트 연결
+    // 필터 및 정렬 토글 이벤트 연결
     document.getElementById('toggle-routine-filter').addEventListener('click', () => {
         showAllRoutines = !showAllRoutines;
         localStorage.setItem('calm_dash_show_all_routines', showAllRoutines);
-        app.notify(); // 화면 갱신 트리거
+        app.notify();
     });
     document.getElementById('toggle-schedule-filter').addEventListener('click', () => {
         showAllSchedules = !showAllSchedules;
         localStorage.setItem('calm_dash_show_all_schedules', showAllSchedules);
-        app.notify(); // 화면 갱신 트리거
+        app.notify();
     });
+
+    // 할 일 정렬 이벤트 수동 등록 (setupEventListeners에서 처리하도록 변경 가능)
+    const sortPriorityBtn = document.querySelector('[data-action="sort-priority"]');
+    const sortDateBtn = document.querySelector('[data-action="sort-date"]');
+
+    if (sortPriorityBtn) {
+        sortPriorityBtn.addEventListener('click', () => {
+            todoSortType = 'priority';
+            localStorage.setItem('calm_dash_todo_sort', todoSortType);
+            app.notify();
+        });
+    }
+    if (sortDateBtn) {
+        sortDateBtn.addEventListener('click', () => {
+            todoSortType = 'date';
+            localStorage.setItem('calm_dash_todo_sort', todoSortType);
+            app.notify();
+        });
+    }
 
     // 테마 설정 복구
     const savedTheme = localStorage.getItem('calm_dash_theme');
@@ -564,6 +675,31 @@ function init() {
             icon.classList.remove('ph-sun');
             icon.classList.add('ph-moon');
         }
+    }
+
+    // 데이터 내보내기/가져오기 이벤트
+    const exportBtn = document.getElementById('export-data-btn');
+    const importBtn = document.getElementById('import-data-btn');
+    const importInput = document.getElementById('import-file-input');
+
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => app.exportJSON());
+    }
+
+    if (importBtn && importInput) {
+        importBtn.addEventListener('click', () => {
+            showConfirmModal(
+                '데이터를 가져오시겠습니까?<br><strong class="text-red-500">기존 브라우저의 모든 데이터가 삭제되고 파일 내용으로 대체됩니다.</strong>',
+                () => importInput.click()
+            );
+        });
+
+        importInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                app.importJSON(e.target.files[0]);
+                e.target.value = ''; // 동일 파일 재선택 가능하게 초기화
+            }
+        });
     }
 
     // 최초 사용자 안내 모달 표시
@@ -581,7 +717,7 @@ if (document.readyState === 'loading') {
 
 /**
  * @function setupEventListeners
- * @description 전역 공통 이벤트(등록 버튼, 테마 토글, 안내 보기 등)에 대한 리스너를 한 곳에서 설정합니다.
+ * @description 화면에 있는 여러 버튼들이 눌렸을 때 어떤 일을 할지 미리 약속해두는 함수입니다. (예: 추가 버튼 누르면 입력창 띄우기)
  */
 function setupEventListeners() {
     // 항목 추가 버튼들 (data-action 속성 기준)
@@ -622,7 +758,9 @@ function setupEventListeners() {
     }
 }
 
-// 날씨 아이콘 매핑 (Open-Meteo VMO 코드 기준)
+// --- 6. 부가 정보 데이터 (Weather Data): 날씨 아이콘과 이름표들입니다. ---
+
+// 날씨 코드(번호)에 맞춰 어떤 아이콘과 이름을 보여줄지 정해둔 목록입니다. (Open-Meteo 기준)
 const WEATHER_ICONS = {
     0: { icon: 'ph-sun', text: '맑음' },
     1: { icon: 'ph-sun-horizon', text: '대체로 맑음' },
@@ -639,6 +777,7 @@ const WEATHER_ICONS = {
     71: { icon: 'ph-cloud-snow', text: '눈' },
     73: { icon: 'ph-cloud-snow', text: '눈' },
     75: { icon: 'ph-cloud-snow', text: '강한 눈' },
+    77: { icon: 'ph-cloud-snow', text: '눈발' },
     80: { icon: 'ph-cloud-rain', text: '소나기' },
     81: { icon: 'ph-cloud-rain', text: '강한 소나기' },
     82: { icon: 'ph-cloud-rain', text: '폭우' },
@@ -647,15 +786,17 @@ const WEATHER_ICONS = {
 
 /**
  * @function initWeather
- * @description 사용자의 위치(Geolocation)를 확인하거나 IP 기반으로 날씨 정보를 가져와 상단 헤더에 출격합니다.
- * 3시간 동안 유지되는 위치 캐시를 사용하여 잦은 권한 요청을 방지합니다.
+ * @description 지금 내가 있는 곳의 날씨 정보를 가져와서 화면에 보여줍니다.
+ * 1. 예전에 확인했던 위치 정보가 있다면 그대로 씁니다 (속도 향상).
+ * 2. 정보가 없다면 GPS나 IP 주소를 통해 현재 위치를 찾습니다.
+ * 3. 찾은 위치의 기온과 하늘 상태(맑음, 비 등)를 화면에 표시합니다.
  */
 async function initWeather() {
     const weatherElement = document.getElementById('live-weather');
     if (!weatherElement) return;
 
     const CACHE_KEY = 'calm_dash_location_cache';
-    const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3시간 캐시 유지
+    const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3시간 동안은 같은 위치 정보를 사용합니다.
 
     try {
         let lat, lon, city;
@@ -738,7 +879,7 @@ async function initWeather() {
 
 /**
  * @function initClock
- * @description 실시간 시계와 날짜 표시를 시작합니다. 1분마다 정보를 갱신하여 시스템 부하를 최소화합니다.
+ * @description 실시간 시계와 오늘 날짜를 화면에 보여주기 시작합니다. 1분마다 한 번씩 시간을 확인해서 바꿉니다.
  */
 function initClock() {
     const updateTime = () => {
@@ -756,11 +897,11 @@ function initClock() {
 
 /**
  * @function getTimeSelectorHTML
- * @description 시간과 분을 선택할 수 있는 HTML <select> 코드를 생성하여 반환합니다.
- * @param {string} prefix input 필드의 이름(name) 접두어
- * @param {string} defaultHour 초기 선택될 시간 (00-23)
- * @param {string} defaultMin 초기 선택될 분 (00, 05, 10...)
- * @returns {string} 셀렉터 HTML 문자열
+ * @description 모달 창에서 '몇 시 몇 분'을 고를 수 있는 선택 상자들을 만듭니다.
+ * @param {string} prefix 이름표 앞에 붙을 말 (예: 시작 시간, 종료 시간 구분용)
+ * @param {string} defaultHour 처음에 보여줄 시간
+ * @param {string} defaultMin 처음에 보여줄 분
+ * @returns {string} 완성된 선택 상자 HTML 코드
  */
 function getTimeSelectorHTML(prefix, defaultHour = "08", defaultMin = "00") {
     const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -781,9 +922,9 @@ function getTimeSelectorHTML(prefix, defaultHour = "08", defaultMin = "00") {
 
 /**
  * @function showAddModal
- * @description 항목을 추가하거나 수정하기 위한 입력 폼이 포함된 모달을 화면에 띄웁니다.
- * @param {string} type 모달 유형 ('routine', 'schedule', 'todo')
- * @param {Object|null} editItem 수정 시 대상 항목의 데이터 (신규 추가 시 null)
+ * @description 새로운 일정을 적거나, 기존 내용을 고칠 수 있는 팝업창(모달)을 띄웁니다.
+ * @param {string} type 어떤 것을 추가/수정하는지 ('routine': 루틴, 'schedule': 일정, 'todo': 할 일)
+ * @param {Object|null} editItem 고칠 내용이 있다면 그 정보, 새로 만드는 것이라면 아무것도 없음
  */
 function showAddModal(type, editItem = null) {
     const overlay = document.getElementById('modal-overlay');
@@ -825,12 +966,13 @@ function showAddModal(type, editItem = null) {
                 <div><label class="block font-bold mb-1">종료 시간</label>${getTimeSelectorHTML('end', eh, em)}</div>
             </div>`;
     } else if (type === 'todo') {
-        const dueDate = editItem ? editItem.dueDate : new Date().toISOString().split('T')[0];
+        const dueDate = editItem ? (editItem.dueDate || '') : '';
         formFields = `
             <div class="mb-4"><label class="block font-bold mb-1">할 일 내용</label><input type="text" name="title" required value="${title}" placeholder="예: 전기 요금 납부" class="w-full"></div>
             <div class="grid grid-cols-2 gap-4 mb-6">
-                <div><label class="block font-bold mb-1">마감 기한</label><input type="date" name="dueDate" required value="${dueDate}" class="w-full p-2 border-2 border-black"></div>
-                <div><label class="block font-bold mb-1">중요도</label><select name="priority" class="w-full p-2 border-2 border-black">
+                <div><label class="block font-bold mb-1">마감 기한 (선택)</label><input type="date" name="dueDate" value="${dueDate}" class="w-full p-2 border-2 border-black"></div>
+                <div><label class="block font-bold mb-1">중요도 (선택)</label><select name="priority" class="w-full p-2 border-2 border-black">
+                    <option value="none" ${(!editItem || editItem.priority === 'none') ? 'selected' : ''}>미지정</option>
                     <option value="high" ${editItem && editItem.priority === 'high' ? 'selected' : ''}>최고 (중요/긴급)</option>
                     <option value="medium" ${editItem && editItem.priority === 'medium' ? 'selected' : ''}>중간</option>
                     <option value="low" ${editItem && editItem.priority === 'low' ? 'selected' : ''}>낮음</option>
@@ -843,13 +985,18 @@ function showAddModal(type, editItem = null) {
             <h3 class="text-2xl font-black uppercase">${editItem ? '정보 수정' : `새 ${type === 'routine' ? '루틴' : type === 'schedule' ? '일정' : '할 일'} 추가`}</h3>
             <button id="close-modal-btn" class="e-btn p-1 h-8 w-8 text-xl flex items-center justify-center"><i class="ph ph-x"></i></button>
         </div>
-        <form id="add-form">${formFields}<div class="flex justify-end gap-3 pt-4 border-t-2 border-gray-200"><button type="button" id="cancel-modal-btn" class="e-btn bg-white border-gray-400 text-gray-700">취소</button><button type="submit" class="e-btn primary"><i class="ph ph-floppy-disk"></i> ${editItem ? '저장하기' : '추가하기'}</button></div></form>
+        <form id="add-form">
+            ${formFields}
+            <div class="flex justify-end gap-3 pt-4 border-t-2 border-gray-200">
+                <button type="button" id="cancel-modal-btn" class="e-btn bg-white border-gray-400 text-gray-700">취소</button>
+                <button type="submit" class="e-btn primary"><i class="ph ph-floppy-disk"></i> ${editItem ? '저장하기' : '추가하기'}</button>
+            </div>
+        </form>
     `;
     overlay.appendChild(modal);
 
     const close = () => overlay.classList.add('hidden');
 
-    // 종일 일정 토글 핸들러
     if (type === 'schedule') {
         const checkbox = modal.querySelector('#isAllDay');
         const timeContainer = modal.querySelector('#time-range-container');
@@ -874,12 +1021,12 @@ function showAddModal(type, editItem = null) {
         const data = { ...rawData };
 
         if (type === 'routine') {
-            data.time = `${rawData.time_hour}:${rawData.time_min} `;
+            data.time = `${rawData.time_hour}:${rawData.time_min}`;
             if (editItem) app.updateItem('routine', editItem.id, data);
             else app.addRoutine(data);
         } else if (type === 'schedule') {
-            data.start = `${rawData.start_hour}:${rawData.start_min} `;
-            data.end = `${rawData.end_hour}:${rawData.end_min} `;
+            data.start = `${rawData.start_hour}:${rawData.start_min}`;
+            data.end = `${rawData.end_hour}:${rawData.end_min}`;
             data.date = rawData.date;
             data.isAllDay = rawData.isAllDay === 'on';
             if (editItem) app.updateItem('schedule', editItem.id, data);
@@ -897,7 +1044,7 @@ function showAddModal(type, editItem = null) {
 
 /**
  * @function showGuideModal
- * @description 최초 방문 사용자에게 앱 사용법과 저장 방식에 대한 안내 팝업을 표시합니다.
+ * @description 앱을 처음 써보는 분들을 위해 사용법을 알려주는 환영 인사 창을 띄웁니다.
  */
 function showGuideModal() {
     const overlay = document.getElementById('modal-overlay');
@@ -928,7 +1075,7 @@ function showGuideModal() {
 
 /**
  * @function showStorageInfoModal
- * @description 데이터 저장소(LocalStorage)에 관한 상세 설명을 담은 팝업을 표시합니다.
+ * @description 내 정보가 어디에 저장되는지 궁금해하는 분들을 위해 안내 창을 띄웁니다.
  */
 function showStorageInfoModal() {
     const overlay = document.getElementById('modal-overlay');

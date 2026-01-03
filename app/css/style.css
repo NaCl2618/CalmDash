@@ -1,33 +1,38 @@
-/* Tailwind Config Injection */
-/* Note: Since we use CDN, we configure it via the global 'tailwind' object in a script tag if needed, 
-   but for this structured setup, we can also put it in the HTML head or here if simple. 
-   Actually, for CDN usage, it's best in the HTML <script>. 
-   However, we'll put the custom CSS classes here.
-*/
+/* 
+ * CalmDash 화면 스타일 시트 (CSS)
+ * 
+ * 이 파일은 앱의 전체적인 모양새를 결정합니다. 
+ * 'E-Ink' 전자잉크 기기의 느낌을 살리기 위해 검은색 선과 굵은 그림자를 주로 사용합니다.
+ */
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght[100..900]&display=swap');
 
-/* Base Overrides */
+/* 기본 설정: 글꼴을 부드럽게 보여주는 설정입니다. */
 body {
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* E-Ink Specific Utility Classes */
+/* E-Ink 스타일 도구들: 전자종이 느낌을 내는 특수 효과들입니다. */
+
+/* 굵은 그림자 효과 (버튼이나 카드 뒤에 붙음) */
 .shadow-hard {
     box-shadow: 4px 4px 0px 0px #000000;
 }
 
+/* 조금 얇은 그림자 효과 */
 .shadow-hard-sm {
     box-shadow: 2px 2px 0px 0px #000000;
 }
 
+/* 카드 모양: 흰색 바탕에 검정 테두리 */
 .e-card {
     background-color: white;
     border: 2px solid black;
     transition: all 0.2s ease;
 }
 
+/* 전자종이 버튼 스타일 */
 .e-btn {
     background-color: white;
     border: 2px solid black;
@@ -44,16 +49,19 @@ body {
     gap: 0.5rem;
 }
 
+/* 버튼을 눌렀을 때 쏙 들어가는 효과 */
 .e-btn:active {
     transform: translate(2px, 2px);
     box-shadow: none;
 }
 
+/* 검정색 강조 버튼 스타일 */
 .e-btn.primary {
     background-color: black;
     color: white;
 }
 
+/* 작은 이름표(배지) 스타일 */
 .e-badge {
     border: 1px solid black;
     padding: 2px 6px;
@@ -62,7 +70,7 @@ body {
     font-weight: bold;
 }
 
-/* Form Elements */
+/* 입력 칸: 글자를 적거나 선택하는 칸들의 모양입니다. */
 input[type="text"],
 input[type="time"],
 input[type="date"],
