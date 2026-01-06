@@ -34,7 +34,18 @@ const INITIAL_DATA = {
         { id: 't2', title: '생일 선물 구매', dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0], priority: 'medium', isCompleted: false },
         { id: 't3', title: '수학 숙제', dueDate: new Date(Date.now() + 1 * 86400000).toISOString().split('T')[0], priority: 'high', isCompleted: false },
         { id: 't4', title: '차고 청소', dueDate: new Date(Date.now() + 10 * 86400000).toISOString().split('T')[0], priority: 'low', isCompleted: false }
-    ]
+    ],
+    // 앱 설정값들
+    settings: {
+        sectionOrder: ['routines', 'todos', 'schedules'], // 섹션 순서
+        visibleSections: { // 각 섹션 표시 여부
+            routines: true,
+            todos: true,
+            schedules: true
+        },
+        dateFormat: 'YYYY. MM. DD. (ddd)', // 날짜 표시 형식
+        timeFormat: 'HH:mm' // 시간 표시 형식
+    }
 };
 
 // --- 2. 도우미 도구들 ---
@@ -76,7 +87,12 @@ class Store {
         try {
             const stored = localStorage.getItem(this.STORAGE_KEY);
             if (stored) {
-                return JSON.parse(stored);
+                const parsed = JSON.parse(stored);
+                // 새로 추가된 설정 기능이 기존 데이터에 없을 경우를 위해 보완합니다.
+                if (!parsed.settings) {
+                    parsed.settings = JSON.parse(JSON.stringify(INITIAL_DATA.settings));
+                }
+                return parsed;
             }
         } catch (e) {
             console.warn('LocalStorage access denied or failed:', e);
@@ -263,6 +279,16 @@ class Store {
             }
         };
         reader.readAsText(file);
+    }
+
+    /**
+     * @method updateSettings
+     * @description 사용자가 변경한 설정값을 저장소에 반영합니다.
+     * @param {Object} newSettings 새로 바꿀 설정 정보
+     */
+    updateSettings(newSettings) {
+        this.data.settings = { ...this.data.settings, ...newSettings };
+        this.save();
     }
 }
 
@@ -633,7 +659,15 @@ function init() {
             onDelete: (id) => app.deleteItem('todo', id),
             onEdit: (item) => showAddModal('todo', item)
         }, todoSortType);
+        // 섹션 순서 및 표시 여부 적용
+        renderDashboardGrid(data.settings);
     });
+
+    // 설정 버튼 이벤트 연결
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => showSettingsModal());
+    }
 
     // 필터 및 정렬 토글 이벤트 연결
     document.getElementById('toggle-routine-filter').addEventListener('click', () => {
@@ -887,11 +921,12 @@ function initClock() {
         const clockElement = document.getElementById('live-clock');
         const dateElement = document.getElementById('live-date');
 
-        // 분 단위 시계로 변경
-        if (clockElement) clockElement.textContent = now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' });
-        if (dateElement) dateElement.textContent = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        const settings = app.data.settings;
+
+        if (clockElement) clockElement.textContent = formatTime(now, settings.timeFormat);
+        if (dateElement) dateElement.textContent = formatDate(now, settings.dateFormat);
     };
-    setInterval(updateTime, 60000); // 1분마다 업데이트
+    setInterval(updateTime, 10000); // 10초마다 업데이트 (초 단위가 없으므로 10초면 충분)
     updateTime();
 }
 
@@ -1101,3 +1136,247 @@ function showStorageInfoModal() {
     overlay.appendChild(modal);
     modal.querySelector('#storage-close-btn').onclick = () => overlay.classList.add('hidden');
 }
+
+/**
+ * @function formatDate
+ * @description 날짜를 원하는 형식으로 바꿔줍니다.
+ */
+function formatDate(date, format) {
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const ddd = days[date.getDay()];
+    const YYYY = date.getFullYear();
+    const MM = String(date.getMonth() + 1).padStart(2, '0');
+    const DD = String(date.getDate()).padStart(2, '0');
+
+    return format
+        .replace('YYYY', YYYY)
+        .replace('MM', MM)
+        .replace('DD', DD)
+        .replace('ddd', ddd);
+}
+
+/**
+ * @function formatTime
+ * @description 시간을 원하는 형식으로 바꿔줍니다.
+ */
+function formatTime(date, format) {
+    const HH = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    const hhValue = date.getHours() % 12 || 12;
+    const hh = String(hhValue).padStart(2, '0');
+    const A = date.getHours() < 12 ? '오전' : '오후';
+
+    return format
+        .replace('HH', HH)
+        .replace('mm', mm)
+        .replace('hh', hh)
+        .replace('A', A);
+}
+
+/**
+ * @function renderDashboardGrid
+ * @description 설정된 순서와 표시 여부에 따라 대시보드 화면을 다시 구성합니다.
+ */
+function renderDashboardGrid(settings) {
+    const grid = document.getElementById('dashboard-grid');
+    if (!grid) return;
+
+    const sectionIds = {
+        routines: 'section-routines',
+        todos: 'section-todos',
+        schedules: 'section-schedules'
+    };
+
+    // 설정된 순서대로 HTML 요소를 다시 배치합니다.
+    settings.sectionOrder.forEach(key => {
+        const el = document.getElementById(sectionIds[key]);
+        if (el) {
+            grid.appendChild(el);
+            // 숨기기 설정 적용
+            if (settings.visibleSections[key]) {
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+    });
+
+    // 모든 섹션이 숨겨졌을 때 안내 문구 (선택 사항)
+    const allHidden = Object.values(settings.visibleSections).every(v => v === false);
+    let emptyMsg = document.getElementById('grid-empty-msg');
+    if (allHidden) {
+        if (!emptyMsg) {
+            emptyMsg = document.createElement('div');
+            emptyMsg.id = 'grid-empty-msg';
+            emptyMsg.className = 'col-span-full py-20 text-center text-gray-400 italic border-4 border-dashed border-gray-200';
+            emptyMsg.innerHTML = '<i class="ph ph-eye-slash text-4xl mb-2"></i><div>모든 섹션이 숨겨져 있습니다. 설정에서 다시 켤 수 있습니다.</div>';
+            grid.appendChild(emptyMsg);
+        }
+    } else if (emptyMsg) {
+        emptyMsg.remove();
+    }
+}
+
+/**
+ * @function showSettingsModal
+ * @description 루틴 순서, 표시 여부, 시계 포맷 등을 바꿀 수 있는 설정 창을 띄웁니다.
+ */
+function showSettingsModal() {
+    const overlay = document.getElementById('modal-overlay');
+    if (!overlay) return;
+    overlay.innerHTML = '';
+    overlay.classList.remove('hidden');
+
+    // 현재 설정을 복사하여 임시 저장소에 담습니다.
+    const tempSettings = JSON.parse(JSON.stringify(app.data.settings));
+    const modal = document.createElement('div');
+    modal.className = 'bg-white p-6 border-4 border-black shadow-hard rounded-none mx-4 w-full max-w-lg modal-content overflow-y-auto max-h-[90vh]';
+
+    const sectionNames = { routines: '루틴', todos: '할 일', schedules: '일정' };
+
+    const renderModalContent = () => {
+        modal.innerHTML = `
+            <div class="flex justify-between items-center border-b-2 border-black pb-3 mb-4">
+                <h3 class="text-2xl font-black uppercase"><i class="ph ph-gear-six inline mr-2"></i>설정</h3>
+                <button id="close-settings-btn" class="e-btn p-1 h-8 w-8 text-xl flex items-center justify-center"><i class="ph ph-x"></i></button>
+            </div>
+
+            <div class="space-y-6">
+                <!-- 1. 섹션 순서 및 표시 설정 -->
+                <section>
+                    <h4 class="font-black border-b border-black mb-3 pb-1 text-sm uppercase">화면 구성 (순서 및 표시)</h4>
+                    <div id="settings-order-list" class="space-y-3">
+                        ${tempSettings.sectionOrder.map((key, index) => `
+                            <div class="flex items-center justify-between p-3 border-2 border-black bg-gray-50 shadow-hard-sm">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex flex-col gap-1">
+                                        <button class="move-up-btn border-2 border-black px-2 py-0.5 text-[10px] font-black ${index === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-black hover:text-white'}" 
+                                            data-key="${key}" ${index === 0 ? 'disabled' : ''}>
+                                            ▲ 위로
+                                        </button>
+                                        <button class="move-down-btn border-2 border-black px-2 py-0.5 text-[10px] font-black ${index === tempSettings.sectionOrder.length - 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-black hover:text-white'}" 
+                                            data-key="${key}" ${index === tempSettings.sectionOrder.length - 1 ? 'disabled' : ''}>
+                                            ▼ 아래로
+                                        </button>
+                                    </div>
+                                    <span class="font-black text-lg ml-2">${sectionNames[key]}</span>
+                                </div>
+                                <div class="flex items-center gap-3 border-l-2 border-black pl-4">
+                                    <span class="text-xs font-bold ${tempSettings.visibleSections[key] ? 'text-black' : 'text-gray-400'}">${tempSettings.visibleSections[key] ? '표시 중' : '숨김'}</span>
+                                    <input type="checkbox" class="toggle-visibility-btn w-6 h-6 border-2 border-black cursor-pointer appearance-none checked:bg-black" data-key="${key}" ${tempSettings.visibleSections[key] ? 'checked' : ''}>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </section>
+
+                <!-- 2. 날짜 및 시간 포맷 -->
+                <section>
+                    <h4 class="font-black border-b border-black mb-3 pb-1 text-sm uppercase">날짜 및 시간 형식</h4>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold mb-1">날짜 형식 (미리보기: ${formatDate(new Date(), tempSettings.dateFormat)})</label>
+                            <select id="date-format-select" class="w-full p-2 border-2 border-black font-mono text-sm">
+                                <option value="YYYY년 MM월 DD일" ${tempSettings.dateFormat === 'YYYY년 MM월 DD일' ? 'selected' : ''}>2026년 01월 06일</option>
+                                <option value="YYYY. MM. DD. (ddd)" ${tempSettings.dateFormat === 'YYYY. MM. DD. (ddd)' ? 'selected' : ''}>2026. 01. 06. (화)</option>
+                                <option value="YYYY-MM-DD" ${tempSettings.dateFormat === 'YYYY-MM-DD' ? 'selected' : ''}>2026-01-06</option>
+                                <option value="MM/DD (ddd)" ${tempSettings.dateFormat === 'MM/DD (ddd)' ? 'selected' : ''}>01/06 (화)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold mb-1">시간 형식 (미리보기: ${formatTime(new Date(), tempSettings.timeFormat)})</label>
+                            <select id="time-format-select" class="w-full p-2 border-2 border-black font-mono text-sm">
+                                <option value="HH:mm" ${tempSettings.timeFormat === 'HH:mm' ? 'selected' : ''}>14:30 (24시간)</option>
+                                <option value="A hh:mm" ${tempSettings.timeFormat === 'A hh:mm' ? 'selected' : ''}>오후 02:30 (12시간)</option>
+                                <option value="HH시 mm분" ${tempSettings.timeFormat === 'HH시 mm분' ? 'selected' : ''}>14시 30분</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. 데이터 관리 -->
+                <section>
+                    <h4 class="font-black border-b border-black mb-3 pb-1 text-sm uppercase">데이터 관리</h4>
+                    <div class="flex gap-2">
+                        <button id="modal-export-btn" class="flex-grow e-btn border-dashed text-xs py-2">
+                            <i class="ph ph-export mr-1"></i> 데이터 내보내기 (.json)
+                        </button>
+                        <button id="modal-import-btn" class="flex-grow e-btn border-dashed text-xs py-2">
+                            <i class="ph ph-import mr-1"></i> 데이터 가져오기
+                        </button>
+                        <input type="file" id="modal-import-input" class="hidden" accept=".json">
+                    </div>
+                </section>
+            </div>
+
+            <div class="mt-8 pt-4 border-t-2 border-black flex justify-end">
+                <button id="settings-save-btn" class="e-btn primary w-full">확인 및 닫기</button>
+            </div>
+        `;
+
+        // 이벤트 다시 연결
+        modal.querySelector('#close-settings-btn').onclick = () => overlay.classList.add('hidden');
+
+        modal.querySelector('#settings-save-btn').onclick = () => {
+            app.updateSettings(tempSettings);
+            initClock(); // 시간 표시 갱신
+            overlay.classList.add('hidden');
+        };
+
+        modal.querySelectorAll('.move-up-btn').forEach(btn => {
+            btn.onclick = () => {
+                const key = btn.dataset.key;
+                const idx = tempSettings.sectionOrder.indexOf(key);
+                if (idx > 0) {
+                    [tempSettings.sectionOrder[idx - 1], tempSettings.sectionOrder[idx]] = [tempSettings.sectionOrder[idx], tempSettings.sectionOrder[idx - 1]];
+                    renderModalContent();
+                }
+            };
+        });
+
+        modal.querySelectorAll('.move-down-btn').forEach(btn => {
+            btn.onclick = () => {
+                const key = btn.dataset.key;
+                const idx = tempSettings.sectionOrder.indexOf(key);
+                if (idx < tempSettings.sectionOrder.length - 1) {
+                    [tempSettings.sectionOrder[idx + 1], tempSettings.sectionOrder[idx]] = [tempSettings.sectionOrder[idx], tempSettings.sectionOrder[idx + 1]];
+                    renderModalContent();
+                }
+            };
+        });
+
+        modal.querySelectorAll('.toggle-visibility-btn').forEach(chk => {
+            chk.onchange = (e) => {
+                const key = chk.dataset.key;
+                tempSettings.visibleSections[key] = e.target.checked;
+                renderModalContent();
+            };
+        });
+
+        modal.querySelector('#date-format-select').onchange = (e) => {
+            tempSettings.dateFormat = e.target.value;
+            renderModalContent();
+        };
+
+        modal.querySelector('#time-format-select').onchange = (e) => {
+            tempSettings.timeFormat = e.target.value;
+            renderModalContent();
+        };
+
+        modal.querySelector('#modal-export-btn').onclick = () => app.exportJSON();
+        modal.querySelector('#modal-import-btn').onclick = () => {
+            showConfirmModal('데이터를 가져오시겠습니까?<br><strong class="text-red-500">기존 브라우저의 모든 데이터가 삭제되고 파일 내용으로 대체됩니다.</strong>',
+                () => modal.querySelector('#modal-import-input').click());
+        };
+        modal.querySelector('#modal-import-input').onchange = (e) => {
+            if (e.target.files.length > 0) {
+                app.importJSON(e.target.files[0]);
+                overlay.classList.add('hidden');
+            }
+        };
+    };
+
+    renderModalContent();
+    overlay.appendChild(modal);
+}
+

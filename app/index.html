@@ -66,13 +66,10 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <button id="export-data-btn" class="e-btn text-[10px] py-1 px-2 border-dashed" title="데이터 내보내기">
-                <i class="ph ph-export"></i> 내보내기
+            <button id="settings-btn"
+                class="p-2 border-2 border-black hover:bg-black hover:text-white transition-colors" title="설정">
+                <i class="ph ph-gear"></i>
             </button>
-            <button id="import-data-btn" class="e-btn text-[10px] py-1 px-2 border-dashed" title="데이터 가져오기">
-                <i class="ph ph-import"></i> 가져오기
-            </button>
-            <input type="file" id="import-file-input" class="hidden" accept=".json">
             <button id="theme-toggle"
                 class="p-2 border-2 border-black hover:bg-black hover:text-white transition-colors" title="흑백 테마 전환">
                 <i id="theme-icon" class="ph ph-sun"></i>
@@ -81,12 +78,13 @@
     </header>
 
     <!-- 메인 대시보드: 루틴, 할 일, 일정 카드가 보여지는 핵심 공간입니다. -->
-    <main id="main-dashboard" class="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full">
-        <!-- 대시보드 그리드: 화면을 3개의 구역으로 나눕니다. -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <main id="main-dashboard" class="flex-grow p-3 sm:p-6 max-w-7xl mx-auto w-full">
+        <!-- 대시보드 그리드: sm(640px) 이상부터는 3단으로 표시하도록 변경합니다. -->
+        <div id="dashboard-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
 
-            <!-- 1번 구역: 매일 반복하는 습관이나 루틴을 보여줍니다. -->
-            <div class="flex flex-col gap-4">
+            <!-- 각 섹션 컨테이너에 고유 ID를 부여하여 순서 조절을 가능하게 합니다. -->
+            <!-- 1. 루틴 섹션 -->
+            <div id="section-routines" class="flex flex-col gap-4">
                 <div class="flex justify-between items-end border-b-2 border-black pb-2 mb-2">
                     <h3 class="text-xl font-black uppercase flex items-center gap-2">
                         <i class="ph ph-arrows-clockwise"></i> 루틴
@@ -110,8 +108,8 @@
                 </div>
             </div>
 
-            <!-- 2번 구역: 잊지 말고 꼭 해야 할 개별 작업들을 보여줍니다. -->
-            <div class="flex flex-col gap-4">
+            <!-- 2. 할 일 섹션 -->
+            <div id="section-todos" class="flex flex-col gap-4">
                 <div class="flex justify-between items-end border-b-2 border-black pb-2 mb-2">
                     <h3 class="text-xl font-black uppercase flex items-center gap-2">
                         <i class="ph ph-check-square"></i> 할 일
@@ -135,8 +133,8 @@
                 </div>
             </div>
 
-            <!-- 3번 구역: 특정한 날짜와 시간의 약속이나 계획을 보여줍니다. -->
-            <div class="flex flex-col gap-4">
+            <!-- 3. 일정 섹션 -->
+            <div id="section-schedules" class="flex flex-col gap-4">
                 <div class="flex justify-between items-end border-b-2 border-black pb-2 mb-2">
                     <h3 class="text-xl font-black uppercase flex items-center gap-2">
                         <i class="ph ph-calendar"></i> 일정
@@ -155,6 +153,7 @@
                     </button>
                 </div>
             </div>
+
 
         </div>
     </main>
