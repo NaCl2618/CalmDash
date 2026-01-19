@@ -51,6 +51,19 @@ const INITIAL_DATA = {
 // --- 2. 도우미 도구들 ---
 
 /**
+ * @function escapeHtml
+ * @description XSS 공격을 방어하기 위해 HTML 특수문자를 인코딩합니다.
+ * @param {string} text 인코딩할 텍스트
+ * @returns {string} HTML 인코딩된 안전한 텍스트
+ */
+function escapeHtml(text) {
+    if (text == null) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
  * @function generateUUID
  * @description 각 항목(루틴, 할 일 등)을 구별하기 위한 고유한 '이름표(ID)'를 만듭니다.
  * @returns {string} 새로 만들어진 겹치지 않는 고유한 이름표 문자열
@@ -306,6 +319,10 @@ function showConfirmModal(message, onConfirm) {
 
     const modal = document.createElement('div');
     modal.className = 'bg-white p-6 border-4 border-black shadow-hard rounded-none mx-4 w-full max-w-sm modal-content';
+
+    // message에 HTML 태그가 의도적으로 포함된 경우(예: <br>, <strong>)를 허용하되,
+    // 사용자 입력이 아닌 내부 메시지에만 사용되므로 현재 상태 유지
+    // 만약 사용자 입력이 message에 포함될 경우 escapeHtml 적용 필요
     modal.innerHTML = `
         <div class="mb-6">
             <h3 class="text-xl font-black mb-2">⚠️ 확인</h3>
@@ -390,18 +407,18 @@ function renderRoutines(routines, containerId, events, showAll = false) {
         card.innerHTML = `
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                    <span class="e-badge bg-black text-white px-1.5 py-0 text-[9px]">${r.repeat}</span>
-                    <span class="text-[11px] font-mono font-bold"><i class="ph ph-clock inline mr-1"></i>${r.time}</span>
+                    <span class="e-badge bg-black text-white px-1.5 py-0 text-[9px]">${escapeHtml(r.repeat)}</span>
+                    <span class="text-[11px] font-mono font-bold"><i class="ph ph-clock inline mr-1"></i>${escapeHtml(r.time)}</span>
                 </div>
                 <div class="flex gap-1">
                     <button data-id="${r.id}" class="edit-routine-btn p-1 text-gray-400 hover:text-black transition-colors" title="수정"><i class="ph ph-pencil-simple"></i></button>
                     <button data-id="${r.id}" class="delete-routine-btn p-1 text-gray-400 hover:text-red-500 transition-colors" title="삭제"><i class="ph ph-trash"></i></button>
                 </div>
             </div>
-            
+
             <div class="flex justify-between items-center gap-2">
                 <div class="font-bold text-sm leading-tight truncate ${isCompleted ? 'line-through text-gray-500' : ''}">
-                    ${r.title}
+                    ${escapeHtml(r.title)}
                     ${isLate ? '<span class="ml-1 bg-black text-white text-[9px] px-1 py-0.5">긴급</span>' : ''}
                 </div>
                 <button data-id="${r.id}" class="toggle-routine-btn e-btn ${isCompleted ? 'bg-gray-100' : 'primary'} text-[10px] py-1 px-2 flex-shrink-0 shadow-none border">
@@ -499,18 +516,18 @@ function renderSchedules(schedules, containerId, events, showAll = false) {
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <span class="e-badge border border-black px-1 py-0 text-[8px] uppercase font-black">SCH</span>
-                    <span class="text-[11px] font-mono text-gray-600 font-bold"><i class="ph ph-calendar inline mr-1"></i>${s.date}</span>
+                    <span class="text-[11px] font-mono text-gray-600 font-bold"><i class="ph ph-calendar inline mr-1"></i>${escapeHtml(s.date)}</span>
                 </div>
                 <div class="flex gap-1">
                     <button data-id="${s.id}" class="edit-schedule-btn p-1 text-gray-400 hover:text-black transition-colors" title="수정"><i class="ph ph-pencil-simple"></i></button>
                     <button data-id="${s.id}" class="delete-schedule-btn p-1 text-gray-400 hover:text-red-500 transition-colors" title="삭제"><i class="ph ph-trash"></i></button>
                 </div>
             </div>
-            
+
             <div class="flex justify-between items-end gap-2">
-                <div class="font-bold text-base leading-tight truncate">${s.title}</div>
+                <div class="font-bold text-base leading-tight truncate">${escapeHtml(s.title)}</div>
                 <div class="text-[10px] font-bold font-mono bg-gray-100 px-1.5 py-0.5 border border-black flex-shrink-0">
-                    ${s.isAllDay ? '종일' : `${s.start}-${s.end}`}
+                    ${s.isAllDay ? '종일' : `${escapeHtml(s.start)}-${escapeHtml(s.end)}`}
                 </div>
             </div>
         `;
@@ -587,10 +604,10 @@ function renderTodos(todos, containerId, events, sortType = 'priority') {
         card.innerHTML = `
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                    <span class="text-[9px] font-black uppercase px-2 py-0 border-2 border-black ${priorityColor}">${priorityText}</span>
+                    <span class="text-[9px] font-black uppercase px-2 py-0 border-2 border-black ${priorityColor}">${escapeHtml(priorityText)}</span>
                     <span class="text-[11px] font-mono font-bold text-gray-600">
                         <i class="ph ph-calendar-check inline mr-1"></i>
-                        ${t.dueDate || '기한 없음'}
+                        ${escapeHtml(t.dueDate) || '기한 없음'}
                     </span>
                 </div>
                 <div class="flex gap-1">
@@ -598,9 +615,9 @@ function renderTodos(todos, containerId, events, sortType = 'priority') {
                     <button data-id="${t.id}" class="delete-todo-btn p-1 text-gray-400 hover:text-red-500 transition-colors" title="삭제"><i class="ph ph-trash"></i></button>
                 </div>
             </div>
-            
+
             <div class="flex justify-between items-center gap-2">
-                <div class="font-bold text-sm leading-tight truncate">${t.title}</div>
+                <div class="font-bold text-sm leading-tight truncate">${escapeHtml(t.title)}</div>
                 <button data-id="${t.id}" class="complete-todo-btn e-btn primary text-[10px] py-1 px-2 flex-shrink-0 shadow-none border">
                     완료
                 </button>
@@ -881,11 +898,11 @@ async function initWeather() {
                     lat = cLat; lon = cLon; city = cCity;
                 } else {
                     // 캐시도 없으면 IP 기반 위치 확인
-                    const locRes = await fetch('http://ip-api.com/json/');
+                    const locRes = await fetch('https://ipapi.co/json/');
                     const locData = await locRes.json();
-                    if (locData.status === 'success') {
-                        lat = locData.lat;
-                        lon = locData.lon;
+                    if (locData.city) {
+                        lat = locData.latitude;
+                        lon = locData.longitude;
                         city = locData.city;
                     } else {
                         throw new Error('위치 정보를 가져올 수 없습니다.');
