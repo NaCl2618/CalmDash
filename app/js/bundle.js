@@ -51,22 +51,6 @@ const INITIAL_DATA = {
 // --- 2. 도우미 도구들 ---
 
 /**
- * @function escapeHtml
- * @description XSS 공격을 방어하기 위해 HTML 특수문자를 안전하게 인코딩합니다.
- * @param {string} text 인코딩할 텍스트
- * @returns {string} HTML 인코딩된 안전한 텍스트
- */
-function escapeHtml(text) {
-    if (text == null) return '';
-    return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-/**
  * @function generateUUID
  * @description 각 항목(루틴, 할 일 등)을 구별하기 위한 고유한 '이름표(ID)'를 만듭니다.
  * @returns {string} 새로 만들어진 겹치지 않는 고유한 이름표 문자열
@@ -417,7 +401,7 @@ function renderRoutines(routines, containerId, events, showAll = false) {
             
             <div class="flex justify-between items-center gap-2">
                 <div class="font-bold text-sm leading-tight truncate ${isCompleted ? 'line-through text-gray-500' : ''}">
-                    ${escapeHtml(r.title)}
+                    ${r.title}
                     ${isLate ? '<span class="ml-1 bg-black text-white text-[9px] px-1 py-0.5">긴급</span>' : ''}
                 </div>
                 <button data-id="${r.id}" class="toggle-routine-btn e-btn ${isCompleted ? 'bg-gray-100' : 'primary'} text-[10px] py-1 px-2 flex-shrink-0 shadow-none border">
@@ -524,7 +508,7 @@ function renderSchedules(schedules, containerId, events, showAll = false) {
             </div>
             
             <div class="flex justify-between items-end gap-2">
-                <div class="font-bold text-base leading-tight truncate">${escapeHtml(s.title)}</div>
+                <div class="font-bold text-base leading-tight truncate">${s.title}</div>
                 <div class="text-[10px] font-bold font-mono bg-gray-100 px-1.5 py-0.5 border border-black flex-shrink-0">
                     ${s.isAllDay ? '종일' : `${s.start}-${s.end}`}
                 </div>
@@ -616,7 +600,7 @@ function renderTodos(todos, containerId, events, sortType = 'priority') {
             </div>
             
             <div class="flex justify-between items-center gap-2">
-                <div class="font-bold text-sm leading-tight truncate">${escapeHtml(t.title)}</div>
+                <div class="font-bold text-sm leading-tight truncate">${t.title}</div>
                 <button data-id="${t.id}" class="complete-todo-btn e-btn primary text-[10px] py-1 px-2 flex-shrink-0 shadow-none border">
                     완료
                 </button>
