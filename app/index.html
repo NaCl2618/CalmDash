@@ -12,7 +12,11 @@
     <title>CalmDash - Always visible, never intrusive</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!--
+        보안 참고: Tailwind Play CDN은 SRI(Subresource Integrity)를 지원하지 않습니다.
+        프로덕션 환경에서는 npm으로 설치한 빌드 버전 사용을 권장합니다.
+    -->
+    <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -40,10 +44,14 @@
     <!-- Google Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght[100..900]&display=swap"
-        rel="stylesheet">
+        rel="stylesheet"
+        crossorigin="anonymous">
 
     <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!--
+        보안 참고: 버전을 명시하여 예기치 않은 변경을 방지합니다.
+    -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1" crossorigin="anonymous"></script>
 
     <!-- App Styles -->
     <link rel="stylesheet" href="css/style.css">
