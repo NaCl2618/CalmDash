@@ -993,11 +993,11 @@ function showAddModal(type, editItem = null) {
     if (type === 'routine') {
         const [h, m] = editItem ? editItem.time.trim().split(':') : ["08", "00"];
         formFields = `
-             <div class="mb-4"><label class="block font-bold mb-1">목표 루틴</label><input type="text" name="title" required value="${title}" placeholder="예: 영양제 챙겨먹기" class="w-full"></div>
+             <div class="mb-4"><label class="block font-bold mb-1">목표 루틴</label><input type="text" name="title" required value="${escapeHtml(title)}" placeholder="예: 영양제 챙겨먹기" class="w-full"></div>
              <div class="grid grid-cols-2 gap-4 mb-4">
                 <div><label class="block font-bold mb-1">수행 시간</label>${getTimeSelectorHTML('time', h, m)}</div>
                 <div><label class="block font-bold mb-1">반복 일정</label><select name="repeat" class="w-full p-2 border-2 border-black">
-                    ${['매일', '평일', '주말', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'].map(r => `<option ${editItem && editItem.repeat === r ? 'selected' : ''}>${r}</option>`).join('')}
+                    ${['매일', '평일', '주말', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'].map(r => `<option ${editItem && editItem.repeat === r ? 'selected' : ''}>${escapeHtml(r)}</option>`).join('')}
                 </select></div>
              </div>`;
     } else if (type === 'schedule') {
@@ -1007,8 +1007,8 @@ function showAddModal(type, editItem = null) {
         const isAllDay = editItem ? editItem.isAllDay : false;
 
         formFields = `
-            <div class="mb-4"><label class="block font-bold mb-1">일정 제목</label><input type="text" name="title" required value="${title}" placeholder="예: 운동 하기" class="w-full"></div>
-            <div class="mb-4"><label class="block font-bold mb-1">날짜 선택</label><input type="date" name="date" required value="${date}" class="w-full p-2 border-2 border-black"></div>
+            <div class="mb-4"><label class="block font-bold mb-1">일정 제목</label><input type="text" name="title" required value="${escapeHtml(title)}" placeholder="예: 운동 하기" class="w-full"></div>
+            <div class="mb-4"><label class="block font-bold mb-1">날짜 선택</label><input type="date" name="date" required value="${escapeHtml(date)}" class="w-full p-2 border-2 border-black"></div>
             <div class="mb-4 flex items-center gap-2">
                 <input type="checkbox" id="isAllDay" name="isAllDay" ${isAllDay ? 'checked' : ''} class="w-5 h-5 border-2 border-black">
                 <label for="isAllDay" class="font-bold cursor-pointer">종일 일정</label>
@@ -1020,9 +1020,9 @@ function showAddModal(type, editItem = null) {
     } else if (type === 'todo') {
         const dueDate = editItem ? (editItem.dueDate || '') : '';
         formFields = `
-            <div class="mb-4"><label class="block font-bold mb-1">할 일 내용</label><input type="text" name="title" required value="${title}" placeholder="예: 전기 요금 납부" class="w-full"></div>
+            <div class="mb-4"><label class="block font-bold mb-1">할 일 내용</label><input type="text" name="title" required value="${escapeHtml(title)}" placeholder="예: 전기 요금 납부" class="w-full"></div>
             <div class="grid grid-cols-2 gap-4 mb-6">
-                <div><label class="block font-bold mb-1">마감 기한 (선택)</label><input type="date" name="dueDate" value="${dueDate}" class="w-full p-2 border-2 border-black"></div>
+                <div><label class="block font-bold mb-1">마감 기한 (선택)</label><input type="date" name="dueDate" value="${escapeHtml(dueDate)}" class="w-full p-2 border-2 border-black"></div>
                 <div><label class="block font-bold mb-1">중요도 (선택)</label><select name="priority" class="w-full p-2 border-2 border-black">
                     <option value="none" ${(!editItem || editItem.priority === 'none') ? 'selected' : ''}>미지정</option>
                     <option value="high" ${editItem && editItem.priority === 'high' ? 'selected' : ''}>최고 (중요/긴급)</option>
