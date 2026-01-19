@@ -65,6 +65,24 @@ function generateUUID() {
     });
 }
 
+/**
+ * @function escapeHTML
+ * @description 사용자 입력이나 외부 데이터에 포함될 수 있는 악성 스크립트(XSS)를 방지하기 위해 특수 문자를 안전한 형태로 바꿉니다.
+ * @param {string} str 바꿀 원본 문자열
+ * @returns {string} 안전하게 변환된 문자열
+ */
+function escapeHTML(str) {
+    if (!str) return '';
+    const chars = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    };
+    return String(str).replace(/[&<>"']/g, s => chars[s]);
+}
+
 // --- 3. 데이터 창고 (Store): 정보를 저장하고 불러오는 역할을 합니다. ---
 
 class Store {
@@ -309,7 +327,7 @@ function showConfirmModal(message, onConfirm) {
     modal.innerHTML = `
         <div class="mb-6">
             <h3 class="text-xl font-black mb-2">⚠️ 확인</h3>
-            <p class="text-gray-700">${message}</p>
+            <p class="text-gray-700">${escapeHTML(message)}</p>
         </div>
         <div class="flex justify-end gap-3">
             <button id="confirm-cancel-btn" class="e-btn bg-white border-gray-400 text-gray-700">취소</button>
@@ -401,7 +419,7 @@ function renderRoutines(routines, containerId, events, showAll = false) {
             
             <div class="flex justify-between items-center gap-2">
                 <div class="font-bold text-sm leading-tight truncate ${isCompleted ? 'line-through text-gray-500' : ''}">
-                    ${r.title}
+                    ${escapeHTML(r.title)}
                     ${isLate ? '<span class="ml-1 bg-black text-white text-[9px] px-1 py-0.5">긴급</span>' : ''}
                 </div>
                 <button data-id="${r.id}" class="toggle-routine-btn e-btn ${isCompleted ? 'bg-gray-100' : 'primary'} text-[10px] py-1 px-2 flex-shrink-0 shadow-none border">
@@ -508,7 +526,7 @@ function renderSchedules(schedules, containerId, events, showAll = false) {
             </div>
             
             <div class="flex justify-between items-end gap-2">
-                <div class="font-bold text-base leading-tight truncate">${s.title}</div>
+                <div class="font-bold text-base leading-tight truncate">${escapeHTML(s.title)}</div>
                 <div class="text-[10px] font-bold font-mono bg-gray-100 px-1.5 py-0.5 border border-black flex-shrink-0">
                     ${s.isAllDay ? '종일' : `${s.start}-${s.end}`}
                 </div>
@@ -600,7 +618,7 @@ function renderTodos(todos, containerId, events, sortType = 'priority') {
             </div>
             
             <div class="flex justify-between items-center gap-2">
-                <div class="font-bold text-sm leading-tight truncate">${t.title}</div>
+                <div class="font-bold text-sm leading-tight truncate">${escapeHTML(t.title)}</div>
                 <button data-id="${t.id}" class="complete-todo-btn e-btn primary text-[10px] py-1 px-2 flex-shrink-0 shadow-none border">
                     완료
                 </button>
@@ -881,7 +899,7 @@ async function initWeather() {
                     lat = cLat; lon = cLon; city = cCity;
                 } else {
                     // 캐시도 없으면 IP 기반 위치 확인
-                    const locRes = await fetch('http://ip-api.com/json/');
+                    const locRes = await fetch('https://ip-api.com/json/');
                     const locData = await locRes.json();
                     if (locData.status === 'success') {
                         lat = locData.lat;
@@ -903,7 +921,7 @@ async function initWeather() {
 
         weatherElement.innerHTML = `
             <i class="ph ${info.icon} text-xl"></i>
-            <span>${city} ${info.text} ${Math.round(current.temperature)}°C</span>
+            <span>${escapeHTML(city)} ${escapeHTML(info.text)} ${Math.round(current.temperature)}°C</span>
         `;
     } catch (error) {
         console.error('Weather fetch failed:', error);
@@ -970,7 +988,7 @@ function showAddModal(type, editItem = null) {
     const modal = document.createElement('div');
     modal.className = 'bg-white p-6 border-4 border-black shadow-hard rounded-none mx-4 w-full max-w-lg modal-content';
 
-    let title = editItem ? editItem.title : '';
+    let title = editItem ? escapeHTML(editItem.title) : '';
     let formFields = '';
 
     if (type === 'routine') {
@@ -1259,7 +1277,7 @@ function showSettingsModal() {
                                             ▼ 아래로
                                         </button>
                                     </div>
-                                    <span class="font-black text-lg ml-2">${sectionNames[key]}</span>
+                                    <span class="font-black text-lg ml-2">${escapeHTML(sectionNames[key])}</span>
                                 </div>
                                 <div class="flex items-center gap-3 border-l-2 border-black pl-4">
                                     <span class="text-xs font-bold ${tempSettings.visibleSections[key] ? 'text-black' : 'text-gray-400'}">${tempSettings.visibleSections[key] ? '표시 중' : '숨김'}</span>
@@ -1275,7 +1293,7 @@ function showSettingsModal() {
                     <h4 class="font-black border-b border-black mb-3 pb-1 text-sm uppercase">날짜 및 시간 형식</h4>
                     <div class="grid grid-cols-1 gap-4">
                         <div>
-                            <label class="block text-xs font-bold mb-1">날짜 형식 (미리보기: ${formatDate(new Date(), tempSettings.dateFormat)})</label>
+                            <label class="block text-xs font-bold mb-1">날짜 형식 (미리보기: ${escapeHTML(formatDate(new Date(), tempSettings.dateFormat))})</label>
                             <select id="date-format-select" class="w-full p-2 border-2 border-black font-mono text-sm">
                                 <option value="YYYY년 MM월 DD일" ${tempSettings.dateFormat === 'YYYY년 MM월 DD일' ? 'selected' : ''}>2026년 01월 06일</option>
                                 <option value="YYYY. MM. DD. (ddd)" ${tempSettings.dateFormat === 'YYYY. MM. DD. (ddd)' ? 'selected' : ''}>2026. 01. 06. (화)</option>
@@ -1284,7 +1302,7 @@ function showSettingsModal() {
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold mb-1">시간 형식 (미리보기: ${formatTime(new Date(), tempSettings.timeFormat)})</label>
+                            <label class="block text-xs font-bold mb-1">시간 형식 (미리보기: ${escapeHTML(formatTime(new Date(), tempSettings.timeFormat))})</label>
                             <select id="time-format-select" class="w-full p-2 border-2 border-black font-mono text-sm">
                                 <option value="HH:mm" ${tempSettings.timeFormat === 'HH:mm' ? 'selected' : ''}>14:30 (24시간)</option>
                                 <option value="A hh:mm" ${tempSettings.timeFormat === 'A hh:mm' ? 'selected' : ''}>오후 02:30 (12시간)</option>
