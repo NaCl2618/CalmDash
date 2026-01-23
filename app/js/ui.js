@@ -469,6 +469,17 @@ function showSettingsModal(store, onClockUpdate) {
                     </div>
                 </section>
                 <section>
+                    <h4 class="font-black border-b border-black mb-3 pb-1 text-sm uppercase">화면 설정</h4>
+                    <div class="flex items-center justify-between p-3 border-2 border-black bg-gray-50">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-sm">화면 켜짐 유지</span>
+                            <span class="text-xs text-gray-600 mt-1">대시보드 사용 중 화면이 꺼지지 않도록 합니다.</span>
+                            <span class="text-[10px] text-gray-500 mt-1 italic">※ HTTPS 환경 및 지원 브라우저에서만 작동</span>
+                        </div>
+                        <input type="checkbox" id="wake-lock-toggle" class="w-6 h-6 border-2 border-black appearance-none checked:bg-black cursor-pointer" ${tempSettings.screenWakeLock ? 'checked' : ''}>
+                    </div>
+                </section>
+                <section>
                     <h4 class="font-black border-b border-black mb-3 pb-1 text-sm uppercase">데이터 관리</h4>
                     <div class="flex gap-2">
                         <button id="modal-export-btn" class="flex-grow e-btn border-dashed text-xs py-2">내보내기 (.json)</button>
@@ -511,6 +522,7 @@ function showSettingsModal(store, onClockUpdate) {
         });
         modal.querySelector('#date-format-select').onchange = (e) => { tempSettings.dateFormat = e.target.value; renderModalContent(); };
         modal.querySelector('#time-format-select').onchange = (e) => { tempSettings.timeFormat = e.target.value; renderModalContent(); };
+        modal.querySelector('#wake-lock-toggle').onchange = (e) => { tempSettings.screenWakeLock = e.target.checked; };
         modal.querySelector('#modal-export-btn').onclick = () => store.exportJSON();
         modal.querySelector('#modal-import-btn').onclick = () => {
             showConfirmModal('기존 모든 데이터가 삭제되고 파일 내용으로 대체됩니다.', () => modal.querySelector('#modal-import-input').click());

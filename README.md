@@ -27,6 +27,15 @@
 - **LocalStorage**: 별도의 서버 없이 모든 데이터는 사용자의 브라우저 내부에 안전하게 저장됩니다.
 - **No Tracking**: 어떠한 개인정보도 수집하거나 외부로 전송하지 않습니다.
 
+### 📱 화면 켜짐 유지 (Screen Wake Lock)
+- **자동 화면 타임아웃 방지**: 대시보드를 항상 켜진 상태로 유지할 수 있습니다.
+- **설정에서 토글 가능**: 배터리 관리를 위해 선택적으로 활성화/비활성화 가능.
+- **브라우저 지원**:
+  - Android: Chrome 84+, Firefox 126+, Opera 73+
+  - iOS/iPadOS: Safari 16.6+
+  - Desktop: Chrome 85+, Edge 90+, Firefox 126+, Safari 16.6+
+- **HTTPS 필요**: 보안 컨텍스트(HTTPS 또는 localhost)에서만 작동합니다.
+
 ---
 
 ## 🛠️ 기술 스택
@@ -55,7 +64,38 @@
 
 1. 이 저장소를 클론하거나 다운로드합니다.
 2. `app/index.html` 파일을 최신 웹 브라우저로 엽니다.
-3. (선측) 위치 정보 권한을 승인하면 현재 위치의 날씨를 확인할 수 있습니다.
+3. (선택) 위치 정보 권한을 승인하면 현재 위치의 날씨를 확인할 수 있습니다.
+
+### 로컬 서버로 실행 (권장)
+
+화면 켜짐 유지 기능을 사용하려면 HTTPS 또는 localhost가 필요합니다:
+
+```bash
+# Node.js가 설치되어 있다면:
+npx http-server app -p 8080
+
+# 또는 Python 3이 설치되어 있다면:
+cd app
+python -m http.server 8080
+```
+
+그런 다음 브라우저에서 `http://localhost:8080`으로 접속하세요.
+
+### 테스트 실행
+
+자동화된 E2E 테스트를 실행하려면:
+
+```bash
+npm install
+npm test
+```
+
+## 🧪 테스트
+
+이 프로젝트는 Playwright를 사용한 E2E 테스트를 포함합니다:
+- **테스트 성공률**: 85.7% (6/7 테스트 통과)
+- **테스트 커버리지**: Wake Lock API, LocalStorage, Page Visibility API 등 핵심 기능
+- **브라우저 테스트**: Chromium 기반 브라우저에서 자동 테스트
 
 ---
 

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell:*)",
+      "Bash(dir \"C:\\\\study\\\\ClamDash\\\\specs\\\\001-screen-wake-lock\\\\*_kor.md\")",
+      "Bash(test:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(npm test:*)"
+    ]
+  }
+}

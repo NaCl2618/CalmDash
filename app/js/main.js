@@ -22,6 +22,9 @@
 // 앱 인스턴스 생성
 const app = new Store();
 
+// Wake Lock 관리
+let wakeLock = null;
+
 /**
  * @function initClock
  * @description 실시간 시계 업데이트
@@ -38,6 +41,60 @@ function initClock() {
     };
     setInterval(updateTime, 10000);
     updateTime();
+}
+
+/**
+ * @function requestWakeLock
+ * @description Wake Lock 활성화
+ */
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('[Wake Lock] 화면 켜짐 유지 활성화');
+
+            wakeLock.addEventListener('release', () => {
+                console.log('[Wake Lock] 화면 켜짐 유지 해제됨');
+            });
+        } else {
+            console.warn('[Wake Lock] 이 브라우저는 Wake Lock API를 지원하지 않습니다.');
+        }
+    } catch (err) {
+        console.error('[Wake Lock] 활성화 실패:', err);
+    }
+}
+
+/**
+ * @function releaseWakeLock
+ * @description Wake Lock 해제
+ */
+async function releaseWakeLock() {
+    if (wakeLock !== null) {
+        try {
+            await wakeLock.release();
+            wakeLock = null;
+            console.log('[Wake Lock] 화면 켜짐 유지 비활성화');
+        } catch (err) {
+            console.error('[Wake Lock] 해제 실패:', err);
+        }
+    }
+}
+
+/**
+ * @function initWakeLock
+ * @description Wake Lock 초기화 및 설정 적용
+ */
+function initWakeLock() {
+    if (app.data.settings.screenWakeLock) {
+        requestWakeLock();
+    }
+
+    // 페이지가 다시 보일 때 Wake Lock 재활성화
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+            await requestWakeLock();
+        }
+    });
 }
 
 /**
@@ -130,6 +187,7 @@ function setupEventListeners() {
 function init() {
     initClock();
     initWeather();
+    initWakeLock();
     setupEventListeners();
 
     let showAllRoutines = localStorage.getItem('calm_dash_show_all_routines') === 'true';
@@ -158,7 +216,15 @@ function init() {
     });
 
     const settingsBtn = document.getElementById('settings-btn');
-    if (settingsBtn) settingsBtn.onclick = () => showSettingsModal(app, initClock);
+    if (settingsBtn) settingsBtn.onclick = () => showSettingsModal(app, () => {
+        initClock();
+        // Wake Lock 설정 적용
+        if (app.data.settings.screenWakeLock) {
+            requestWakeLock();
+        } else {
+            releaseWakeLock();
+        }
+    });
 
     document.getElementById('toggle-routine-filter').onclick = () => {
         showAllRoutines = !showAllRoutines;
