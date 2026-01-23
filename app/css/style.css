@@ -153,6 +153,25 @@ select {
     text-align: center;
 }
 
+/* Custom Checkbox Styling */
+input[type="checkbox"] {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1;
+}
+
 /* Animations */
 @keyframes fadeInScale {
     from {
@@ -257,4 +276,8 @@ select {
     background-color: #1a1a1a !important;
     color: #ffffff !important;
     border-color: #ffffff !important;
+}
+
+.dark-theme input[type="checkbox"]:checked::after {
+    color: #000000 !important;
 }
