@@ -1,0 +1,30 @@
+{
+  "name": "clamdash",
+  "version": "1.0.0",
+  "description": "**CalmDash**는 E-Ink 기기와 고대비 디스플레이에 최적화된 심플하고 강력한 개인용 생산성 대시보드입니다. 불필요한 장식을 배제하고, 눈의 피로를 최소화하면서도 일상 관리에 필요한 핵심 기능을 담았습니다.",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report test-results/html",
+    "serve": "http-server app -p 8080 -c-1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaCl2618/CalmDash.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NaCl2618/CalmDash/issues"
+  },
+  "homepage": "https://github.com/NaCl2618/CalmDash#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.0",
+    "http-server": "^14.1.1",
+    "playwright": "^1.58.0"
+  }
+}
