@@ -33,7 +33,8 @@ const INITIAL_DATA = {
             schedules: true
         },
         dateFormat: 'YYYY. MM. DD. (ddd)',
-        timeFormat: 'HH:mm'
+        timeFormat: 'HH:mm',
+        screenWakeLock: false
     }
 };
 
