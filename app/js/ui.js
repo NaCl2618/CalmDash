@@ -88,6 +88,23 @@ function renderRoutines(routines, containerId, events, showAll = false) {
         const card = document.createElement('div');
         card.className = `e-card p-2 px-3 flex flex-col gap-1 relative transition-all ${isCompleted ? 'opacity-60 grayscale bg-gray-50' : 'bg-white'} ${isLate ? 'border-l-8 border-l-black' : ''} hover:shadow-hard-sm`;
 
+        // 액션 리스트 HTML 생성
+        const actions = r.actions || [];
+        const actionsHTML = actions.length > 0 ? `
+            <div class="mt-2 pt-2 border-t border-gray-200 space-y-1">
+                ${actions.map(action => `
+                    <div class="flex items-center gap-2 pl-2 py-1 text-xs ${action.isCompleted ? 'opacity-50' : ''}">
+                        <button data-routine-id="${r.id}" data-action-id="${action.id}" class="toggle-action-btn flex-shrink-0 w-4 h-4 border-2 border-black ${action.isCompleted ? 'bg-black' : 'bg-white'} hover:bg-gray-200 transition-colors">
+                            ${action.isCompleted ? '<i class="ph ph-check text-white text-[10px]"></i>' : ''}
+                        </button>
+                        <span class="flex-grow ${action.isCompleted ? 'line-through text-gray-500' : 'text-gray-700'}">${escapeHTML(action.title)}</span>
+                        <button data-routine-id="${r.id}" data-action-id="${action.id}" class="edit-action-btn p-0.5 text-gray-400 hover:text-black transition-colors"><i class="ph ph-pencil-simple text-[11px]"></i></button>
+                        <button data-routine-id="${r.id}" data-action-id="${action.id}" class="delete-action-btn p-0.5 text-gray-400 hover:text-red-500 transition-colors"><i class="ph ph-trash text-[11px]"></i></button>
+                    </div>
+                `).join('')}
+            </div>
+        ` : '';
+
         card.innerHTML = `
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
@@ -108,13 +125,60 @@ function renderRoutines(routines, containerId, events, showAll = false) {
                     ${isCompleted ? '<i class="ph ph-check"></i>' : '완료'}
                 </button>
             </div>
+            ${actionsHTML}
+            <div class="mt-2">
+                <button data-routine-id="${r.id}" class="add-action-btn w-full text-left text-xs text-gray-500 hover:text-black py-1 px-2 border border-dashed border-gray-300 hover:border-black transition-colors">
+                    <i class="ph ph-plus inline mr-1"></i>액션 추가
+                </button>
+            </div>
         `;
+
         card.querySelector('.toggle-routine-btn').onclick = () => events.onToggle(r.id);
         card.querySelector('.edit-routine-btn').onclick = (e) => { e.stopPropagation(); events.onEdit(r); };
         card.querySelector('.delete-routine-btn').onclick = (e) => {
             e.stopPropagation();
             showConfirmModal('이 루틴을 정말 삭제하시겠습니까?', () => events.onDelete(r.id));
         };
+
+        // 액션 추가 버튼
+        card.querySelector('.add-action-btn').onclick = (e) => {
+            e.stopPropagation();
+            if (events.onAddAction) events.onAddAction(r.id);
+        };
+
+        // 액션 토글 버튼들
+        card.querySelectorAll('.toggle-action-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if (events.onToggleAction) {
+                    events.onToggleAction(btn.dataset.routineId, btn.dataset.actionId);
+                }
+            };
+        });
+
+        // 액션 수정 버튼들
+        card.querySelectorAll('.edit-action-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if (events.onEditAction) {
+                    const action = actions.find(a => a.id === btn.dataset.actionId);
+                    events.onEditAction(btn.dataset.routineId, action);
+                }
+            };
+        });
+
+        // 액션 삭제 버튼들
+        card.querySelectorAll('.delete-action-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                showConfirmModal('이 액션을 정말 삭제하시겠습니까?', () => {
+                    if (events.onDeleteAction) {
+                        events.onDeleteAction(btn.dataset.routineId, btn.dataset.actionId);
+                    }
+                });
+            };
+        });
+
         container.appendChild(card);
     });
 }
@@ -298,6 +362,61 @@ function renderDashboardGrid(settings) {
     } else if (emptyMsg) {
         emptyMsg.remove();
     }
+}
+
+/**
+ * @function showActionModal
+ * @description 루틴 액션 추가/수정 모달을 띄웁니다.
+ */
+function showActionModal(routineId, store, editAction = null) {
+    const overlay = document.getElementById('modal-overlay');
+    if (!overlay) return;
+    overlay.innerHTML = '';
+    overlay.classList.remove('hidden');
+
+    const modal = document.createElement('div');
+    modal.className = 'bg-white p-6 border-4 border-black shadow-hard rounded-none mx-4 w-full max-w-md modal-content';
+
+    const title = editAction ? escapeHTML(editAction.title) : '';
+
+    modal.innerHTML = `
+        <div class="flex justify-between items-center border-b-2 border-black pb-3 mb-4">
+            <h3 class="text-2xl font-black uppercase">${editAction ? '액션 수정' : '새 액션 추가'}</h3>
+            <button id="close-modal-btn" class="e-btn p-1 h-8 w-8 text-xl flex items-center justify-center"><i class="ph ph-x"></i></button>
+        </div>
+        <form id="action-form">
+            <div class="mb-4">
+                <label class="block font-bold mb-1">액션 내용</label>
+                <input type="text" name="title" required value="${title}" placeholder="예: 스트레칭 하기" class="w-full p-2 border-2 border-black">
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t-2 border-gray-200">
+                <button type="button" id="cancel-modal-btn" class="e-btn bg-white border-gray-400 text-gray-700">취소</button>
+                <button type="submit" class="e-btn primary">${editAction ? '저장하기' : '추가하기'}</button>
+            </div>
+        </form>
+    `;
+    overlay.appendChild(modal);
+
+    const close = () => overlay.classList.add('hidden');
+    modal.querySelector('#close-modal-btn').onclick = close;
+    modal.querySelector('#cancel-modal-btn').onclick = close;
+    modal.querySelector('#action-form').onsubmit = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const actionTitle = formData.get('title');
+
+        if (!actionTitle || actionTitle.trim() === '') {
+            alert('액션 내용을 입력해 주세요.');
+            return;
+        }
+
+        if (editAction) {
+            store.updateAction(routineId, editAction.id, { title: actionTitle });
+        } else {
+            store.addActionToRoutine(routineId, actionTitle);
+        }
+        close();
+    };
 }
 
 /**

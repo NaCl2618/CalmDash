@@ -198,7 +198,11 @@ function init() {
         renderRoutines(data.routines, 'routine-list', {
             onToggle: (id) => app.toggleRoutine(id),
             onDelete: (id) => app.deleteItem('routine', id),
-            onEdit: (item) => showAddModal('routine', app, item)
+            onEdit: (item) => showAddModal('routine', app, item),
+            onAddAction: (routineId) => showActionModal(routineId, app),
+            onToggleAction: (routineId, actionId) => app.toggleAction(routineId, actionId),
+            onEditAction: (routineId, action) => showActionModal(routineId, app, action),
+            onDeleteAction: (routineId, actionId) => app.deleteAction(routineId, actionId)
         }, showAllRoutines);
 
         renderSchedules(data.schedules, 'schedule-list', {

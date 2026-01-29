@@ -15,15 +15,32 @@ class Store {
         this.data = this.load();
     }
 
+    /**
+     * 데이터 마이그레이션: 구 버전 데이터를 최신 구조로 변환
+     */
+    migrateData(data) {
+        // 루틴에 actions 배열 추가 (없으면 빈 배열)
+        if (data.routines) {
+            data.routines = data.routines.map(r => ({
+                ...r,
+                actions: r.actions || []
+            }));
+        }
+
+        // settings 기본값 처리
+        if (!data.settings) {
+            data.settings = JSON.parse(JSON.stringify(INITIAL_DATA.settings));
+        }
+
+        return data;
+    }
+
     load() {
         try {
             const stored = localStorage.getItem(this.STORAGE_KEY);
             if (stored) {
                 const parsed = JSON.parse(stored);
-                if (!parsed.settings) {
-                    parsed.settings = JSON.parse(JSON.stringify(INITIAL_DATA.settings));
-                }
-                return parsed;
+                return this.migrateData(parsed);
             }
         } catch (e) {
             console.warn('LocalStorage access denied or failed:', e);
@@ -52,7 +69,12 @@ class Store {
     }
 
     addRoutine(routine) {
-        this.data.routines.push({ ...routine, id: generateUUID(), isCompleted: false });
+        this.data.routines.push({
+            ...routine,
+            id: generateUUID(),
+            isCompleted: false,
+            actions: [] // 새 루틴은 빈 액션 배열로 시작
+        });
         this.save();
     }
 
@@ -131,7 +153,8 @@ class Store {
             try {
                 const importedData = JSON.parse(e.target.result);
                 if (importedData.routines && importedData.schedules && importedData.todos) {
-                    this.data = importedData;
+                    // import된 데이터도 마이그레이션 적용
+                    this.data = this.migrateData(importedData);
                     this.save();
                     alert('데이터를 성공적으로 가져왔습니다.');
                 } else {
@@ -148,5 +171,60 @@ class Store {
     updateSettings(newSettings) {
         this.data.settings = { ...this.data.settings, ...newSettings };
         this.save();
+    }
+
+    /**
+     * 루틴에 새 액션 추가
+     */
+    addActionToRoutine(routineId, actionTitle) {
+        const routine = this.data.routines.find(r => r.id === routineId);
+        if (routine) {
+            if (!routine.actions) routine.actions = [];
+            routine.actions.push({
+                id: generateUUID(),
+                title: actionTitle,
+                isCompleted: false
+            });
+            this.save();
+        }
+    }
+
+    /**
+     * 액션 완료 상태 토글
+     */
+    toggleAction(routineId, actionId) {
+        const routine = this.data.routines.find(r => r.id === routineId);
+        if (routine && routine.actions) {
+            const action = routine.actions.find(a => a.id === actionId);
+            if (action) {
+                action.isCompleted = !action.isCompleted;
+                this.save();
+            }
+        }
+    }
+
+    /**
+     * 액션 수정
+     */
+    updateAction(routineId, actionId, updates) {
+        const routine = this.data.routines.find(r => r.id === routineId);
+        if (routine && routine.actions) {
+            const index = routine.actions.findIndex(a => a.id === actionId);
+            if (index !== -1) {
+                routine.actions[index] = { ...routine.actions[index], ...updates };
+                this.save();
+            }
+        }
+    }
+
+    /**
+     * 액션 삭제
+     */
+    deleteAction(routineId, actionId) {
+        const routine = this.data.routines.find(r => r.id === routineId);
+        if (routine && routine.actions) {
+            routine.actions = routine.actions.filter(a => a.id !== actionId);
+            this.save();
+        }
     }
 }

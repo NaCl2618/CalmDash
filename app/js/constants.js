@@ -7,11 +7,14 @@
 // 앱을 처음 실행했을 때 사용자에게 보여줄 예시 데이터들입니다.
 const INITIAL_DATA = {
     routines: [
-        { id: 'r1', title: '아침 약 복용', time: '07:30', isCompleted: false, repeat: '매일' },
-        { id: 'r2', title: '학교 가방 싸기', time: '08:00', isCompleted: true, repeat: '매일' },
-        { id: 'r3', title: '식물 물 주기', time: '09:00', isCompleted: false, repeat: '매주' },
-        { id: 'r4', title: '일일 보고서 제출', time: '17:00', isCompleted: false, repeat: '매일' },
-        { id: 'r5', title: '분리수거', time: '19:00', isCompleted: false, repeat: '수요일' }
+        { id: 'r1', title: '아침 약 복용', time: '07:30', isCompleted: false, repeat: '매일', actions: [
+            { id: 'a1', title: '영양제 먹기', isCompleted: false },
+            { id: 'a2', title: '물 한잔 마시기', isCompleted: false }
+        ]},
+        { id: 'r2', title: '학교 가방 싸기', time: '08:00', isCompleted: true, repeat: '매일', actions: [] },
+        { id: 'r3', title: '식물 물 주기', time: '09:00', isCompleted: false, repeat: '매주', actions: [] },
+        { id: 'r4', title: '일일 보고서 제출', time: '17:00', isCompleted: false, repeat: '매일', actions: [] },
+        { id: 'r5', title: '분리수거', time: '19:00', isCompleted: false, repeat: '수요일', actions: [] }
     ],
     schedules: [
         { id: 's1', title: '치과 예약', start: '10:00', end: '11:00', isAllDay: false, dateOffset: 0 },
