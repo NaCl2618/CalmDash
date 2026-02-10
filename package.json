@@ -4,10 +4,15 @@
   "description": "**CalmDash**는 E-Ink 기기와 고대비 디스플레이에 최적화된 심플하고 강력한 개인용 생산성 대시보드입니다. 불필요한 장식을 배제하고, 눈의 피로를 최소화하면서도 일상 관리에 필요한 핵심 기능을 담았습니다.",
   "main": "index.js",
   "scripts": {
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report test-results/html",
+    "test": "vitest",
+    "test:unit": "vitest",
+    "test:unit:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report test-results/html",
+    "test:all": "vitest run && playwright test",
     "serve": "http-server app -p 8080 -c-1"
   },
   "repository": {
@@ -17,14 +22,18 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/NaCl2618/CalmDash/issues"
   },
   "homepage": "https://github.com/NaCl2618/CalmDash#readme",
   "devDependencies": {
     "@playwright/test": "^1.58.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/ui": "^2.1.8",
+    "happy-dom": "^15.11.7",
     "http-server": "^14.1.1",
-    "playwright": "^1.58.0"
+    "playwright": "^1.58.0",
+    "vitest": "^2.1.8"
   }
 }

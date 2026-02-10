@@ -1,12 +1,13 @@
 // @ts-check
-const { defineConfig, devices } = require('@playwright/test');
+import { defineConfig, devices } from '@playwright/test';
 
 /**
  * Playwright Configuration for CalmDash
  * Tests the Screen Wake Lock feature and overall app functionality
  */
-module.exports = defineConfig({
+export default defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.js',
 
   // Maximum time one test can run
   timeout: 30 * 1000,

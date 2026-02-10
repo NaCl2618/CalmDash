@@ -72,3 +72,6 @@ The largest file (~577 lines). Key functions:
 - **Responsive**: Mobile-first, 3-column grid at 640px+ breakpoint (`sm:grid-cols-3`)
 - **Styling**: Tailwind CSS via CDN + custom classes in `app/css/style.css`
 - **No automated tests**: Manual browser testing only
+
+
+IMPORTANT : 모든 진행상황과 응답은 한국어로
