@@ -1,7 +1,7 @@
 {
   "config": {
-    "configFile": "c:\\study\\ClamDash\\playwright.config.js",
-    "rootDir": "c:/study/ClamDash/tests",
+    "configFile": "C:\\study\\ClamDash\\playwright.config.js",
+    "rootDir": "C:/study/ClamDash/tests",
     "forbidOnly": false,
     "fullyParallel": true,
     "globalSetup": null,
@@ -16,7 +16,7 @@
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "c:/study/ClamDash/test-results",
+        "outputDir": "C:/study/ClamDash/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -24,7 +24,7 @@
         },
         "id": "chromium",
         "name": "chromium",
-        "testDir": "c:/study/ClamDash/tests",
+        "testDir": "C:/study/ClamDash/tests",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -99,12 +99,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6185,
+                      "duration": 8648,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-23T12:43:01.839Z",
+                      "startTime": "2026-02-12T12:32:14.447Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -133,12 +133,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 6122,
+                      "duration": 7460,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-23T12:43:01.869Z",
+                      "startTime": "2026-02-12T12:32:14.427Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -164,15 +164,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4069,
+                      "duration": 3865,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-23T12:43:08.315Z",
+                      "startTime": "2026-02-12T12:32:22.684Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -198,15 +198,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4116,
+                      "duration": 3776,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-23T12:43:08.355Z",
+                      "startTime": "2026-02-12T12:32:23.888Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -232,15 +232,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 3918,
+                      "duration": 3946,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-23T12:43:12.454Z",
+                      "startTime": "2026-02-12T12:32:26.586Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -266,15 +266,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 4650,
+                      "duration": 4689,
                       "error": {
                         "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at c:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js:78:20",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js:78:20",
                         "location": {
-                          "file": "c:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js",
+                          "file": "C:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js",
                           "column": 20,
                           "line": 78
                         },
@@ -283,37 +283,37 @@
                       "errors": [
                         {
                           "location": {
-                            "file": "c:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js",
+                            "file": "C:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js",
                             "column": 20,
                             "line": 78
                           },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  76 |     const exists = await toggle.count() > 0;\n  77 |\n> 78 |     expect(exists).toBe(true);\n     |                    ^\n  79 |   });\n  80 |\n  81 |   test('Data structure has settings object', async ({ page }) => {\n    at c:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js:78:20"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  76 |     const exists = await toggle.count() > 0;\n  77 |\n> 78 |     expect(exists).toBe(true);\n     |                    ^\n  79 |   });\n  80 |\n  81 |   test('Data structure has settings object', async ({ page }) => {\n    at C:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js:78:20"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-23T12:43:12.524Z",
+                      "startTime": "2026-02-12T12:32:27.741Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "c:\\study\\ClamDash\\test-results\\wake-lock-basic-Screen-Wak-58a83-k-toggle-exists-in-settings-chromium\\test-failed-1.png"
+                          "path": "C:\\study\\ClamDash\\test-results\\wake-lock-basic-Screen-Wak-58a83-k-toggle-exists-in-settings-chromium\\test-failed-1.png"
                         },
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "c:\\study\\ClamDash\\test-results\\wake-lock-basic-Screen-Wak-58a83-k-toggle-exists-in-settings-chromium\\video.webm"
+                          "path": "C:\\study\\ClamDash\\test-results\\wake-lock-basic-Screen-Wak-58a83-k-toggle-exists-in-settings-chromium\\video.webm"
                         },
                         {
                           "name": "error-context",
                           "contentType": "text/markdown",
-                          "path": "c:\\study\\ClamDash\\test-results\\wake-lock-basic-Screen-Wak-58a83-k-toggle-exists-in-settings-chromium\\error-context.md"
+                          "path": "C:\\study\\ClamDash\\test-results\\wake-lock-basic-Screen-Wak-58a83-k-toggle-exists-in-settings-chromium\\error-context.md"
                         }
                       ],
                       "errorLocation": {
-                        "file": "c:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js",
+                        "file": "C:\\study\\ClamDash\\tests\\wake-lock-basic.spec.js",
                         "column": 20,
                         "line": 78
                       }
@@ -340,15 +340,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 3111,
+                      "duration": 2949,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-23T12:43:16.453Z",
+                      "startTime": "2026-02-12T12:32:30.566Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -368,8 +368,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-23T12:42:57.084Z",
-    "duration": 22803.298000000003,
+    "startTime": "2026-02-12T12:32:11.882Z",
+    "duration": 21799.372,
     "expected": 6,
     "skipped": 0,
     "unexpected": 1,
